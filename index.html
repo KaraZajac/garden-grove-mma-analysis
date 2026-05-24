@@ -6,6 +6,8 @@
 <title>Garden Grove MMA Tank — Thermal Runaway Analysis</title>
 <meta name="description" content="Analytical hypothesis brief, calibrated thermal-runaway simulator, and Monte Carlo failure-window estimate for the Garden Grove (CA) methyl methacrylate storage-tank incident." />
 <link rel="stylesheet" href="assets/styles.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body>
 
@@ -30,6 +32,7 @@
   <a href="#simulator">Simulator</a>
   <a href="#monte-carlo">Monte Carlo</a>
   <a href="#hypothesis">Hypothesis</a>
+  <a href="#consequence">Consequence</a>
   <a href="#weather">Weather</a>
   <a href="#sources">Sources & caveats</a>
 </nav>
@@ -221,9 +224,110 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
   </div>
 </section>
 
+<!-- CONSEQUENCE -->
+<section id="consequence">
+  <h2>7 — Consequence / Blast-Radius Model</h2>
+  <p>If the tank fails, what does the footprint look like? This model takes three failure branches — liquid spill, vapor cloud, vapor-cloud explosion (VCE) — and renders the impact zones on a real map against the OCFA evacuation polygon. Formulas are textbook screening models (TNT-equivalent / Brode overpressure, point-source thermal radiation, Gaussian dispersion with heavy-gas correction). Drag the marker if you want to refine the facility location.</p>
+
+  <div class="sim">
+    <div class="controls">
+      <div>
+        <label>Failure branch</label>
+        <select id="c-branch">
+          <option value="spill">Spill (no ignition) — pool + thermal if ignited</option>
+          <option value="vapor">Vapor cloud — downwind LEL footprint</option>
+          <option value="explosion" selected>Vapor-cloud explosion (VCE)</option>
+        </select>
+      </div>
+      <div>
+        <div class="row"><label>Tank fill</label><span id="c-fill-v">6500 gal</span></div>
+        <input id="c-fill" type="range" min="500" max="34000" step="100" value="6500" />
+      </div>
+      <div>
+        <div class="row"><label>Released fraction on failure</label><span id="c-frac-v">75 %</span></div>
+        <input id="c-frac" type="range" min="5" max="100" step="5" value="75" />
+      </div>
+      <div data-branch="explosion">
+        <div class="row"><label>VCE yield (TNT efficiency)</label><span id="c-yield-v">3 %</span></div>
+        <input id="c-yield" type="range" min="1" max="10" step="0.5" value="3" />
+      </div>
+      <div data-branch="vapor">
+        <div class="row"><label>Wind speed</label><span id="c-wind-v">3.0 m/s</span></div>
+        <input id="c-wind" type="range" min="0.5" max="10" step="0.5" value="3" />
+      </div>
+      <div data-branch="vapor">
+        <div class="row"><label>Wind bearing (downwind)</label><span id="c-dir-v">90°</span></div>
+        <input id="c-dir" type="range" min="0" max="359" step="5" value="90" />
+      </div>
+      <div data-branch="vapor">
+        <label>Pasquill stability</label>
+        <select id="c-stab">
+          <option value="A">A — very unstable (sunny, light wind)</option>
+          <option value="B">B — unstable</option>
+          <option value="C">C — slightly unstable</option>
+          <option value="D" selected>D — neutral (overcast / windy)</option>
+          <option value="E">E — slightly stable</option>
+          <option value="F">F — very stable (night, calm)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="stat-row">
+        <div class="stat"><div class="k">Released</div><div class="v" id="c-sum-a">—</div></div>
+        <div class="stat"><div class="k">Mass</div><div class="v" id="c-sum-b">—</div></div>
+        <div class="stat"><div class="k">Primary impact reach</div><div class="v" id="c-sum-c">—</div></div>
+        <div class="stat"><div class="k">Secondary</div><div class="v" id="c-sum-d">—</div></div>
+      </div>
+
+      <div class="map-wrap">
+        <div id="consequence-map"></div>
+        <div class="map-legend">
+          <span><span class="swatch" style="background:#8839ef"></span>OCFA evac zone (approx.)</span>
+          <span><span class="swatch" style="background:#179299"></span>Liquid pool</span>
+          <span><span class="swatch" style="background:#df8e1d"></span>1 psi / ½LEL / pain flux</span>
+          <span><span class="swatch" style="background:#fe640b"></span>3 psi / LEL / burns</span>
+          <span><span class="swatch" style="background:#e64553"></span>5 psi / heavy thermal</span>
+          <span><span class="swatch" style="background:#d20f39"></span>10 psi / structural</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>What the rings mean</h4>
+      <ul>
+        <li><b>1 psi</b> — window breakage, minor injuries from flying glass</li>
+        <li><b>3 psi</b> — serious injury, light building damage</li>
+        <li><b>5 psi</b> — wood-frame collapse, eardrum rupture</li>
+        <li><b>10 psi</b> — reinforced-building collapse, near-100% fatality</li>
+        <li><b>4 kW/m²</b> — pain in 20 s of exposure</li>
+        <li><b>12.5 kW/m²</b> — 1st-degree burns; ignition of wood after sustained exposure</li>
+        <li><b>37.5 kW/m²</b> — structural steel damage; 100% lethality in 1 min</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Method &amp; assumptions</h4>
+      <ul>
+        <li>Overpressure: Brode equation, free-air spherical TNT-equivalent</li>
+        <li>VCE yield 1–10% (3% is the common screening default for unconfined hydrocarbon clouds)</li>
+        <li>Thermal: point-source model with X<sub>r</sub>=0.30 radiative fraction, MMA burn rate 0.04 kg/m²·s</li>
+        <li>Dispersion: ground-level continuous Gaussian (Pasquill-Gifford σ<sub>y</sub>, σ<sub>z</sub>) with a mild heavy-gas slump correction</li>
+        <li>Pool: 1-cm unbunded spread on flat ground</li>
+        <li>Cloud mass: 10% of released liquid assumed airborne &amp; flammable (default screening fraction)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <b>These are screening models, not engineering simulations.</b> Real footprints depend on terrain, congestion (confined vs unconfined), specific ignition geometry, and atmospheric structure that simple Gaussian + TNT models do not capture. Use this to reason about <i>scale</i> — order-of-magnitude relationships between scenarios — not to plan response.
+  </div>
+</section>
+
 <!-- WEATHER -->
 <section id="weather">
-  <h2>7 — Weather Context</h2>
+  <h2>8 — Weather Context</h2>
   <p>Garden Grove forecast highs cap around 76 °F and never approach the tank's ~90 °F+ interior, so the spray water can in principle always pull heat out. The cooling capacity is the binding constraint, not water temperature. The relevant modulation is the ~18 °F day/night swing — and the slow cooling trend across the week, which gently lowers each successive afternoon peak.</p>
 
   <div class="chart-wrap">
@@ -235,7 +339,7 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
 
 <!-- SOURCES -->
 <section id="sources">
-  <h2>8 — Sources, Caveats, Limitations</h2>
+  <h2>9 — Sources, Caveats, Limitations</h2>
 
   <h3>Key recon findings</h3>
   <table>
@@ -306,6 +410,11 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
 </script>
 
 <script src="assets/charts.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="assets/consequence.js"></script>
+<script src="assets/consequence-map.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,34 @@
+# News Snapshot Index — Garden Grove GKN Aerospace MMA Tank Incident
+
+Open-source news coverage of the methyl methacrylate (MMA) storage-tank incident at the GKN Aerospace facility in Garden Grove, CA. Incident began Thursday May 21, 2026 at approximately 3:40 p.m. PDT. Snapshot fetched May 24, 2026.
+
+| Filename | Outlet | Published | Summary | URL |
+|---|---|---|---|---|
+| abc7-live-updates-tank-spill-or-explode.md | ABC7 Los Angeles (KABC) | 2026-05-24 | Live updates: tank temp rising ~1°/hr; 50,000 evacuated across 5 cities; Newsom emergency, DA tip hotline, Uber code OCSAFE26 | https://abc7.com/live-updates/garden-grove-chemical-tank-emergency-leaking-toxic-chemicals-orange-county-will-spill-explode-officials-say/19152918/ |
+| abc7-what-is-methyl-methacrylate.md | ABC7 Los Angeles (KABC) | 2026-05-23 | Explainer on MMA: vapor heavier than air; Div Chief Nick Freeman, Dr. Regina Chinsio-Kwong on health effects; not classified carcinogenic | https://abc7.com/post/what-is-methyl-methacrylate-toxic-chemical-leak-garden-grove-tank-center-hazmat-crisis/19152928/ |
+| abc-news-50000-evacuation-orders.md | ABC News | 2026-05-23 | 50,000 evacuated; Covey: "worst-case scenario I've ever faced in my career"; neutralizer added to secondary tank; EPA on site | https://abcnews.com/US/evacuation-orders-issued-california-city-chemical-tank-fails/story?id=133234846 |
+| cbs-news-what-to-know.md | CBS News | 2026-05-23 | National "what to know"; Covey: "This is bad as I've ever seen"; 77→90°F; sandbag barriers protect storm drains | https://www.cbsnews.com/news/garden-grove-methyl-methacrylate-chemical-tank-california/ |
+| cbs-la-newsom-state-of-emergency.md | CBS Los Angeles (KCAL) | 2026-05-23 | Newsom declares state of emergency; DA Todd Spitzer launches criminal probe; USC Prof. Picazo on thermal runaway | https://www.cbsnews.com/losangeles/news/garden-grove-chemical-leak-plans-orange-county-california-evacuations/ |
+| cbs-la-44000-evacuated-as-bad-as-ive-seen.md | CBS Los Angeles (KCAL) | 2026-05-23 | 44,000+ evacuated; Covey "32-year fire service career", "as bad as I've ever seen"; Saturday tank held at ~61°F via unmanned firehoses | https://www.cbsnews.com/losangeles/news/flammable-epoxy-leak-in-orange-county-prompts-hazmat-response/ |
+| pbs-ap-40000-evacuation-orders.md | PBS News (AP wire) | 2026-05-23 | AP wire by Rodriguez/Rush/Schoenbaum: 6,000-7,000 gal MMA; "This thing is going to fail, and we don't know when" — Covey; Vietnamese-language updates | https://www.pbs.org/newshour/nation/40000-under-evacuation-orders-after-chemical-tank-leak-in-southern-california |
+| nbc-la-faulty-valve-leak-or-explode.md | NBC Los Angeles (KNBC) | 2026-05-23 | 34,000-gal tank, faulty pressure-release valve with visible bulge; normal storage 50°F, reached at least 95°F; cooled to ~60°F Friday | https://www.nbclosangeles.com/news/local/garden-grove-hazmat-response-leak/3893550/ |
+| nbc-la-live-updates-unprecedented.md | NBC Los Angeles (KNBC) | 2026-05-23 | "Unprecedented" crisis; OCFA working "in harm's way" to neutralize adjacent 15,000-gal tank; gauge shows 90°F | https://www.nbclosangeles.com/news/local/live-updates-garden-grove-chemical-tank-crisis/3894268/ |
+| nbc-la-state-of-emergency-declared.md | NBC Los Angeles (KNBC) | 2026-05-23 | Newsom emergency proclamation; six total evacuation centers listed; Freedom Hall reached capacity | https://www.nbclosangeles.com/news/local/garden-grove-chemical-tank-state-of-emergency/3894233/ |
+| foxla-40000-evacuated-overheated-tank.md | FOX 11 Los Angeles (KTTV) | 2026-05-23 | Comprehensive: full Covey two-options quote; road/school closures; GKN 2021 $900K environmental settlement; Disneyland/Knott's open | https://www.foxla.com/news/garden-grove-chemical-threat-overheated-tank-evacuations |
+| foxla-second-round-evacuations.md | FOX 11 Los Angeles (KTTV) | 2026-05-21 | Initial Thursday-night reissuance; Covey: "there is no active gas leak, no plume in the area"; 15 GGUSD campuses closed | https://www.foxla.com/news/hazardous-materials-alert-forces-evacuations-garden-grove-before-orders-lifted |
+| fox-news-tank-likely-spill-or-blow.md | Fox News | 2026-05-22 | Covey: "We are setting up these evacuations in preparation for these two options: It fails, or it blows up"; FEMA/EPA contacted | https://www.foxnews.com/us/california-officials-warn-massive-chemical-tank-likely-spill-thousands-gallons-blow |
+| newsweek-evacuation-map-very-bad.md | Newsweek | 2026-05-23 | Full Covey "very bad chemicals" quote; LA Mayor Karen Bass on LAFD hazmat backup; evacuation map boundaries | https://www.newsweek.com/garden-grove-california-evacuation-map-chemical-tank-fail-explode-orange-county-11984871 |
+| mynewsla-ocfa-stabilize-leak.md | MyNewsLA.com | 2026-05-22 | OCFA quote on inoperable valve "additional operational challenges"; Thursday 8:40 p.m. lift then Friday reissue | https://mynewsla.com/orange-county/2026/05/22/ocfa-crews-work-to-stabilize-leak-at-gkn-aerospace-in-garden-grove-3/ |
+| loscerritos-blast-zone-map.md | Los Cerritos Community News | 2026-05-23 | OCFA blast-zone map detail: Wakeham Elementary in moderate damage zone; streets named in severe zone | https://www.loscerritosnews.net/2026/05/23/garden-grove-blast-zone-map-shows-homes-school-near-gkn-aerospace-chemical-threat/ |
+| wikipedia-garden-grove-chemical-leak.md | Wikipedia | 2026-05-24 | Encyclopedic synthesis: 34,000-gal tank/7,000 gal MMA; GKN at site since 1993, 15.5 acres; prior 2018 and 2021 violations | https://en.wikipedia.org/wiki/Garden_Grove_chemical_leak |
+
+## Outlets attempted but not fetched
+
+- **CNN** (https://www.cnn.com/2026/05/22/us/chemical-spill-orange-county-california) — returned HTTP 451 on both attempts
+- **NPR** (https://www.npr.org/2026/05/22/g-s1-124082/garden-grove-chemical-tank-leak) — connection closed / timeout on retry
+- **KTLA** (two URLs) — HTTP 403 Forbidden
+- **NBC News national** — HTTP 403 Forbidden
+- **CBC Canada** — HTTP 403 Forbidden
+- **LA Times, OC Register, Reuters direct, AP direct** — no working URL surfaced in search (AP coverage captured via PBS syndication)
+
+CNN, NPR, and KTLA content is partially represented via Newsweek, ABC News, FOX 11, and PBS/AP coverage which carries the same core quotes and figures.

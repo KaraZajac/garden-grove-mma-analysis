@@ -2,7 +2,16 @@
 // Requires Chart.js (loaded via CDN in index.html) and GG (data.js), GG_SIM (simulator.js).
 
 (function(){
-  const ink = '#e6edf3', muted = '#8b949e', line = '#30363d';
+  // Catppuccin Latte
+  const ctp = {
+    text:'#4c4f69', subtext1:'#5c5f77', subtext0:'#6c6f85',
+    surface2:'#acb0be', surface1:'#bcc0cc', surface0:'#ccd0da',
+    red:'#d20f39', maroon:'#e64553', peach:'#fe640b',
+    yellow:'#df8e1d', green:'#40a02b', teal:'#179299',
+    sky:'#04a5e5', blue:'#1e66f5', mauve:'#8839ef', lavender:'#7287fd',
+    overlay1:'#8c8fa1',
+  };
+  const ink = ctp.text, muted = ctp.subtext0, line = ctp.surface1;
   Chart.defaults.color = muted;
   Chart.defaults.borderColor = line;
   Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif';
@@ -19,11 +28,11 @@
     type: 'line',
     data: {
       datasets: [
-        {label:'Measured',     data: measured, borderColor:'#3fb950', backgroundColor:'#3fb950', pointRadius:6, showLine:true, borderWidth:2, tension:0.2},
-        {label:'Modeled',      data: modeled,  borderColor:'#d29922', backgroundColor:'#d29922', pointRadius:5, showLine:true, borderDash:[4,4], borderWidth:2, tension:0.2},
-        {label:'Hypothesized', data: hypo,     borderColor:'#a371f7', backgroundColor:'#a371f7', pointRadius:5, showLine:true, borderDash:[2,4], borderWidth:2, tension:0.2},
-        {label:'Runaway threshold (100 °F)', data:[{x:0,y:100},{x:100,y:100}], borderColor:'#f85149', borderWidth:1.5, borderDash:[6,4], pointRadius:0, showLine:true},
-        {label:'Safe target (50 °F)',        data:[{x:0,y:50},{x:100,y:50}],   borderColor:'#3fb950', borderWidth:1,  borderDash:[2,4], pointRadius:0, showLine:true},
+        {label:'Measured',     data: measured, borderColor:ctp.green,  backgroundColor:ctp.green,  pointRadius:6, showLine:true, borderWidth:2, tension:0.2},
+        {label:'Modeled',      data: modeled,  borderColor:ctp.yellow, backgroundColor:ctp.yellow, pointRadius:5, showLine:true, borderDash:[4,4], borderWidth:2, tension:0.2},
+        {label:'Hypothesized', data: hypo,     borderColor:ctp.mauve,  backgroundColor:ctp.mauve,  pointRadius:5, showLine:true, borderDash:[2,4], borderWidth:2, tension:0.2},
+        {label:'Runaway threshold (100 °F)', data:[{x:0,y:100},{x:100,y:100}], borderColor:ctp.red,   borderWidth:1.5, borderDash:[6,4], pointRadius:0, showLine:true},
+        {label:'Safe target (50 °F)',        data:[{x:0,y:50},{x:100,y:50}],   borderColor:ctp.green, borderWidth:1,   borderDash:[2,4], pointRadius:0, showLine:true},
       ]
     },
     options: {
@@ -49,10 +58,10 @@
         label: 'Probability (%)',
         data: mc.bins.map(b => b.pct),
         backgroundColor: mc.bins.map(b =>
-          b.hold ? '#3fb950'
-          : b.primary ? '#f85149'
-          : b.secondary ? '#f0883e'
-          : '#8b949e'),
+          b.hold ? ctp.green
+          : b.primary ? ctp.red
+          : b.secondary ? ctp.peach
+          : ctp.overlay1),
         borderColor: line,
         borderWidth: 1,
       }]
@@ -77,8 +86,8 @@
     data:{
       labels: GG.forecast.map(d => d.date),
       datasets:[
-        {label:'High °F', data:GG.forecast.map(d=>d.hi), backgroundColor:'#f0883e', borderColor:line, borderWidth:1},
-        {label:'Low °F',  data:GG.forecast.map(d=>d.lo), backgroundColor:'#58a6ff', borderColor:line, borderWidth:1},
+        {label:'High °F', data:GG.forecast.map(d=>d.hi), backgroundColor:ctp.peach, borderColor:line, borderWidth:1},
+        {label:'Low °F',  data:GG.forecast.map(d=>d.lo), backgroundColor:ctp.blue,  borderColor:line, borderWidth:1},
       ]
     },
     options:{
@@ -116,8 +125,8 @@
   const tempChart = new Chart(document.getElementById('chart-sim-temp'), {
     type:'line',
     data:{datasets:[
-      {label:'Tank T (°F)', borderColor:'#ff7a45', backgroundColor:'rgba(255,122,69,.1)', borderWidth:2, pointRadius:0, fill:true, tension:0.2, data:[]},
-      {label:'Runaway 100 °F', borderColor:'#f85149', borderDash:[4,4], borderWidth:1, pointRadius:0, data:[]},
+      {label:'Tank T (°F)', borderColor:ctp.peach, backgroundColor:'rgba(254,100,11,.10)', borderWidth:2, pointRadius:0, fill:true, tension:0.2, data:[]},
+      {label:'Runaway 100 °F', borderColor:ctp.red, borderDash:[4,4], borderWidth:1, pointRadius:0, data:[]},
     ]},
     options:{
       maintainAspectRatio:false, animation:false,
@@ -132,8 +141,8 @@
   const heatChart = new Chart(document.getElementById('chart-sim-heat'), {
     type:'line',
     data:{datasets:[
-      {label:'Q_gen (W)', borderColor:'#f85149', borderWidth:2, pointRadius:0, tension:0.2, data:[]},
-      {label:'Q_cool (W)', borderColor:'#58a6ff', borderWidth:2, pointRadius:0, tension:0.2, data:[]},
+      {label:'Q_gen (W)',  borderColor:ctp.red,  borderWidth:2, pointRadius:0, tension:0.2, data:[]},
+      {label:'Q_cool (W)', borderColor:ctp.blue, borderWidth:2, pointRadius:0, tension:0.2, data:[]},
     ]},
     options:{
       maintainAspectRatio:false, animation:false,
@@ -182,16 +191,16 @@
         : 't=' + out.crossed.toFixed(1) + 'h';
     if (out.runaway){
       stats.status.textContent = 'RUNAWAY';
-      stats.status.style.color = '#f85149';
+      stats.status.style.color = ctp.red;
     } else if (out.crossed !== null){
       stats.status.textContent = 'CROSSED';
-      stats.status.style.color = '#f0883e';
+      stats.status.style.color = ctp.peach;
     } else if (peak < 95){
       stats.status.textContent = 'STABLE';
-      stats.status.style.color = '#3fb950';
+      stats.status.style.color = ctp.green;
     } else {
       stats.status.textContent = 'NEAR-BAL';
-      stats.status.style.color = '#d29922';
+      stats.status.style.color = ctp.yellow;
     }
   }
 
