@@ -51,3 +51,7 @@ Open-source news coverage of the methyl methacrylate (MMA) storage-tank incident
 - **LA Times, OC Register, Reuters direct, AP direct** — no working URL surfaced in search (AP coverage captured via PBS syndication)
 
 CNN, NPR, and KTLA content is partially represented via Newsweek, ABC News, FOX 11, and PBS/AP coverage which carries the same core quotes and figures.
+
+| abc7-spilling-preferred-outcome.md | ABC7 Los Angeles (KABC) | 2026-05-22 | Covey: spill is "best-case scenario" vs. explosion; two-options framing; containment barrier in place | https://abc7.com/live-updates/garden-grove-chemical-tank-emergency-leaking-toxic-chemicals-orange-county-will-spill-explode-officials-say/19152918/entry/19152879/ |
+| abc7-ocfa-no-public-calls.md | ABC7 Los Angeles (KABC) | 2026-05-23 | OCFA social-media directive: "refrain from calling to offer suggestions"; communication lines overwhelmed; 2:04 AM GMT Fri–Sat overnight | https://abc7.com/live-updates/garden-grove-chemical-tank-emergency-leaking-toxic-chemicals-orange-county-will-spill-explode-officials-say/19152918/entry/19153516/ |
+| patch-initial-evacuation-lift.md | Patch (Orange County) | 2026-05-21 | Initial Thursday-night coverage; evacuation zone boundaries; reunification at Rancho Alamitos HS; orders lifted ~9 PM before Friday reissuance | https://patch.com/california/orange-county/evacuations-issued-when-holding-tank-leaks-garden-grove-ocfa |
