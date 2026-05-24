@@ -38,6 +38,15 @@ function evapCooling(T_K, p){
   const driving = Math.max(0, pSat(T_film) - RH * pSat(p.Twater));
   return h_m * A_c * (driving / (R * T_film)) * MW * h_fg;
 }
+// MMA vapor pressure + total vapor-space pressure for PSV check.
+function pMmaPa(T_K){
+  return 3866 * Math.exp(-36800/R * (1/T_K - 1/293.15));
+}
+const T0_VAP = 297, P_ATM = 101325;
+const P_AIR_INIT = P_ATM - pMmaPa(T0_VAP);
+function pTotalPa(T_K){
+  return P_AIR_INIT * T_K / T0_VAP + pMmaPa(T_K);
+}
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0,1-s.X) * Math.max(0,1-s.I) * gel(s.X);
@@ -62,19 +71,23 @@ function rk4(s, dt, p){
           I:Math.max(0,s.I+(k1.dI+2*k2.dI+2*k3.dI+k4.dI)*dt/6)};
 }
 function trajectory(p, startH, endH, surviveH, runawayF){
+  const PSV_GRACE_END = 12;
+  const psv_set_Pa = P_ATM + (p.psvPsig ?? 1.5) * 6894.76;
   let s={t:startH,T:p.T0,X:0.02,I:p.I0??0.3};
-  let crossed=null, peakF=K2F(s.T), t=startH;
+  let crossed=null, vented=null, peakF=K2F(s.T), t=startH;
   while (t < endH){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
     if (crossed === null && TF >= runawayF) crossed = t;
+    if (vented === null && t > PSV_GRACE_END && pTotalPa(s.T) > psv_set_Pa) vented = t;
     if (TF > 250) break;
     const dt = TF > 95 ? 5 : 60;
     const nxt = rk4(s, dt, p);
     t += dt/3600;
     s.t = t; s.T = nxt.T; s.X = nxt.X; s.I = nxt.I;
   }
-  return { crossed, peakF, survivedToNow: !(crossed !== null && crossed < surviveH) };
+  const ok = !((crossed !== null && crossed < surviveH) || (vented !== null && vented < surviveH));
+  return { crossed, peakF, survivedToNow: ok };
 }
 function randn(){ let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
 function clamp(x,lo,hi){ return Math.min(hi,Math.max(lo,x)); }
@@ -100,6 +113,7 @@ function sampleParams(overrides){
     evapOn:   true,
     h_m:      Math.exp(Math.log(0.012) + 0.85 * randn()),
     RH:       clamp(0.60 + 0.10 * randn(), 0.30, 0.85),
+    psvPsig:  clamp(1.5 + 0.6 * randn(), 0.5, 4.0),
   };
   return Object.assign(p, overrides);
 }
@@ -153,6 +167,8 @@ const sweeps = [
     low:  { h_m: 0.004 },   high: { h_m: 0.035 } },
   { name: 'RH (ambient humidity)',
     low:  { RH: 0.35 },     high: { RH: 0.80 } },
+  { name: 'PSV setpoint',
+    low:  { psvPsig: 0.8 }, high: { psvPsig: 3.0 } },
 ];
 
 const N = parseInt(process.argv[2] || '1500', 10);

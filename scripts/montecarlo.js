@@ -41,6 +41,22 @@ function effectiveUA(UA_clean, X, p){
   return U_eff * A_c;
 }
 
+// MMA vapor pressure via Clausius-Clapeyron, anchored at (20°C, 29 mmHg)
+// and (101°C, 760 mmHg).  Returns Pa.
+function pMmaPa(T_K){
+  const Pref = 3866, Tref = 293.15, dHvap = 36800;
+  return Pref * Math.exp(-dHvap/R * (1/T_K - 1/Tref));
+}
+// Total vapor-space pressure for a closed atmospheric tank initially at
+// equilibrium at T0 (= 297 K, ~75 °F).  Moles of non-condensable gas are
+// fixed thereafter; MMA partial pressure follows Antoine in the headspace.
+const T0_VAP = 297;
+const P_ATM  = 101325;
+const P_AIR_INIT = P_ATM - pMmaPa(T0_VAP);
+function pTotalPa(T_K){
+  return P_AIR_INIT * T_K / T0_VAP + pMmaPa(T_K);
+}
+
 // Evaporative cooling from the deluge film (latent heat).
 function evapCooling(T_bulk_K, p){
   if (!p.evapOn) return 0;
@@ -86,25 +102,36 @@ function rk4(s, dt, p){
   };
 }
 
-// Integrate from anchor.  Returns { crossed, peakF, survivedToNow }.
-// Adaptive dt: 60 s at low T, 5 s once temperature crosses the steep regime.
+// Integrate from anchor.  Returns { crossed, peakF, survivedToNow, ventedBeforeNow }.
+//   - "crossed" = first time T ≥ sampled runaway threshold
+//   - "ventedBeforeNow" = first time after PSV-grace window that total vapor
+//     pressure would exceed the sampled PSV setpoint.  News record shows no
+//     visible PSV vent since the Thursday auto-activation (~h=4 → closed ~h=10),
+//     so a forward simulation that vents between PSV_GRACE_END and surviveByHour
+//     contradicts observed history.
+// surviveByHour: accept only trajectories that DIDN'T cross OR vent before that time.
 function trajectory(p, startHour, endHour, surviveByHour, runawayF){
+  const PSV_GRACE_END = 12;          // hr — Thursday vent considered settled by this point
+  const psv_set_Pa = P_ATM + (p.psvPsig ?? 1.5) * 6894.76;
+
   let s = { t: startHour, T: p.T0, X: 0.02, I: p.I0 ?? 0.3 };
-  let crossed = null;
+  let crossed = null, vented = null;
   let peakF = K2F(s.T);
   let t = startHour;
   while (t < endHour){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
     if (crossed === null && TF >= runawayF) crossed = t;
+    if (vented === null && t > PSV_GRACE_END && pTotalPa(s.T) > psv_set_Pa) vented = t;
     if (TF > 250) break;
     const dt = TF > 95 ? 5 : 60;
     const next = rk4(s, dt, p);
     t += dt/3600;
     s.t = t; s.T = next.T; s.X = next.X; s.I = next.I;
   }
-  const survivedToNow = !(crossed !== null && crossed < surviveByHour);
-  return { crossed, peakF, survivedToNow };
+  const survivedToNow = !((crossed !== null && crossed < surviveByHour) ||
+                          (vented  !== null && vented  < surviveByHour));
+  return { crossed, peakF, survivedToNow, vented };
 }
 
 // ---------- priors ----------------------------------------------------------
@@ -140,12 +167,12 @@ function sampleParams(){
     kPmma:    0.19,
     rhoPmma:  1180,
     evapOn:   true,
-    // h_m is the mass-transfer coefficient — captures BOTH the physics of
-    // evaporation AND operational uncertainty (wetted-area fraction, water
-    // film integrity, polymer-fouled steel not wetting). Range spans
-    // ~10× because nobody has a measurement for THIS deluge.
-    h_m:      Math.exp(Math.log(0.012) + 0.85 * randn()),   // log-normal, median 0.012
+    h_m:      Math.exp(Math.log(0.012) + 0.85 * randn()),
     RH:       clamp(0.60 + 0.10 * randn(), 0.30, 0.85),
+    // PSV setpoint — back-calibrated from the Thursday auto-activation at
+    // bulk T ≈ 95 °F, which puts total vapor-space pressure at ~1 psig
+    // for a closed atmospheric tank. Prior is tight around 1.5 psig.
+    psvPsig:  clamp(1.5 + 0.6 * randn(), 0.5, 4.0),
   };
 }
 function sampleThresholdF(){
@@ -178,6 +205,7 @@ console.log(`Monte Carlo: anchor at hr ${START_HOUR} (90 °F), survival cutoff h
 console.log(`Target ${N_TARGET.toLocaleString()} accepted trajectories…\n`);
 
 let attempted = 0, accepted = 0, holds = 0, crossed = 0;
+let rejectedCross = 0, rejectedVent = 0;
 const counts = new Map(bins.map(b => [b.id, 0]));
 const crossingTimes = [];
 const peakFs = [];
@@ -187,7 +215,11 @@ while (accepted < N_TARGET){
   const p = sampleParams();
   const thr = sampleThresholdF();
   const out = trajectory(p, START_HOUR, END_HOUR, NOW_HOUR, thr);
-  if (!out.survivedToNow) continue;
+  if (!out.survivedToNow){
+    if (out.crossed !== null && out.crossed < NOW_HOUR) rejectedCross++;
+    else if (out.vented !== null && out.vented < NOW_HOUR) rejectedVent++;
+    continue;
+  }
   accepted++;
   peakFs.push(out.peakF);
   if (out.crossed === null){
@@ -266,6 +298,8 @@ const outPath = path.join(__dirname, '..', 'assets', 'montecarlo-results.json');
 fs.writeFileSync(outPath, JSON.stringify(result, null, 2));
 console.log(`\nDone in ${dur.toFixed(1)}s.`);
 console.log(`Accepted ${accepted.toLocaleString()} / Attempted ${attempted.toLocaleString()}  (acceptance ${(accepted/attempted*100).toFixed(1)}%)`);
+console.log(`  rejected by 100°F crossing: ${rejectedCross.toLocaleString()}  (${(rejectedCross/attempted*100).toFixed(1)}%)`);
+console.log(`  rejected by PSV-vent:       ${rejectedVent.toLocaleString()}  (${(rejectedVent/attempted*100).toFixed(1)}%)`);
 console.log(`Holds: ${holdsPct}%   Crosses: ${crossesPct}%`);
 if (median != null){
   console.log(`Median crossing time: hr ${median.toFixed(1)} = ${result.median_crossing_label}`);
