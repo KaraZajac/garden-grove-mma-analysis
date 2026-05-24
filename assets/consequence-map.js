@@ -2,17 +2,17 @@
 // Requires Leaflet (loaded via CDN) and GG_CONSEQ (consequence.js).
 
 (function(){
-  // Approximate GKN Aerospace Garden Grove site (Knott St / Trask area).
-  // User can drag the marker to refine.
-  const facility = { lat: 33.7779, lng: -117.9989 };
+  // GKN Aerospace Transparency Systems, 12122 Western Ave, Garden Grove 92841.
+  // Coords from the sources/weather-environment/facility-location.md snapshot.
+  const facility = { lat: 33.787, lng: -118.001 };
 
   // Approximate evacuation polygon: bounded by Ball / Trask / Valley View / Dale.
-  // (Used as visual reference only — actual polygon should come from OCFA.)
+  // Used as visual reference only — actual polygon should come from OCFA.
   const evacPolygon = [
-    [33.7849, -118.0210],  // NW: Ball & Valley View
-    [33.7849, -117.9810],  // NE: Ball & Dale
-    [33.7649, -117.9810],  // SE: Trask & Dale
-    [33.7649, -118.0210],  // SW: Trask & Valley View
+    [33.7960, -118.0210],  // NW: Ball & Valley View
+    [33.7960, -117.9810],  // NE: Ball & Dale
+    [33.7760, -117.9810],  // SE: Trask & Dale
+    [33.7760, -118.0210],  // SW: Trask & Valley View
   ];
 
   const map = L.map('consequence-map', {

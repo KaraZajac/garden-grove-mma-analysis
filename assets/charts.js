@@ -16,21 +16,20 @@
   Chart.defaults.borderColor = line;
   Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif';
 
-  const measured = GG.timeline.filter(r => r.type === 'measured' && r.tempF !== null)
-                              .map(r => ({x:r.h, y:r.tempF}));
-  const modeled  = GG.timeline.filter(r => r.type === 'modeled'  && r.tempF !== null)
-                              .map(r => ({x:r.h, y:r.tempF}));
-  const hypo     = GG.timeline.filter(r => r.type === 'hypothesized' && r.tempF !== null)
-                              .map(r => ({x:r.h, y:r.tempF}));
+  const measured       = GG.timeline.filter(r => r.type === 'measured'          && r.tempF !== null).map(r => ({x:r.h, y:r.tempF}));
+  const measuredExt    = GG.timeline.filter(r => r.type === 'measured-exterior' && r.tempF !== null).map(r => ({x:r.h, y:r.tempF}));
+  const modeled        = GG.timeline.filter(r => r.type === 'modeled'           && r.tempF !== null).map(r => ({x:r.h, y:r.tempF}));
+  const hypo           = GG.timeline.filter(r => r.type === 'hypothesized'      && r.tempF !== null).map(r => ({x:r.h, y:r.tempF}));
 
   // ---------- Chart 1: Timeline (measured + modeled + hypothesized) ----------
   new Chart(document.getElementById('chart-timeline'), {
     type: 'line',
     data: {
       datasets: [
-        {label:'Measured',     data: measured, borderColor:ctp.green,  backgroundColor:ctp.green,  pointRadius:6, showLine:true, borderWidth:2, tension:0.2},
-        {label:'Modeled',      data: modeled,  borderColor:ctp.yellow, backgroundColor:ctp.yellow, pointRadius:5, showLine:true, borderDash:[4,4], borderWidth:2, tension:0.2},
-        {label:'Hypothesized', data: hypo,     borderColor:ctp.mauve,  backgroundColor:ctp.mauve,  pointRadius:5, showLine:true, borderDash:[2,4], borderWidth:2, tension:0.2},
+        {label:'Measured (interior)', data: measured,    borderColor:ctp.green,  backgroundColor:ctp.green,  pointRadius:6, showLine:true, borderWidth:2, tension:0.2},
+        {label:'Measured (exterior)', data: measuredExt, borderColor:ctp.teal,   backgroundColor:ctp.teal,   pointRadius:6, pointStyle:'triangle', showLine:false},
+        {label:'Modeled',             data: modeled,     borderColor:ctp.yellow, backgroundColor:ctp.yellow, pointRadius:5, showLine:true, borderDash:[4,4], borderWidth:2, tension:0.2},
+        {label:'Hypothesized',        data: hypo,        borderColor:ctp.mauve,  backgroundColor:ctp.mauve,  pointRadius:5, showLine:true, borderDash:[2,4], borderWidth:2, tension:0.2},
         {label:'Runaway threshold (100 °F)', data:[{x:0,y:100},{x:100,y:100}], borderColor:ctp.red,   borderWidth:1.5, borderDash:[6,4], pointRadius:0, showLine:true},
         {label:'Safe target (50 °F)',        data:[{x:0,y:50},{x:100,y:50}],   borderColor:ctp.green, borderWidth:1,   borderDash:[2,4], pointRadius:0, showLine:true},
       ]
@@ -49,36 +48,63 @@
   });
 
   // ---------- Chart 2: Monte Carlo distribution ----------
-  const mc = GG.monteCarlo;
-  new Chart(document.getElementById('chart-mc'), {
+  function colorFor(b){
+    return b.hold ? ctp.green
+         : b.primary ? ctp.red
+         : b.secondary ? ctp.peach
+         : b.tertiary ? ctp.maroon
+         : ctp.overlay1;
+  }
+  const mcChart = new Chart(document.getElementById('chart-mc'), {
     type: 'bar',
     data: {
-      labels: mc.bins.map(b => b.label),
+      labels: GG.monteCarlo.bins.map(b => b.label),
       datasets: [{
         label: 'Probability (%)',
-        data: mc.bins.map(b => b.pct),
-        backgroundColor: mc.bins.map(b =>
-          b.hold ? ctp.green
-          : b.primary ? ctp.red
-          : b.secondary ? ctp.peach
-          : ctp.overlay1),
-        borderColor: line,
-        borderWidth: 1,
+        data: GG.monteCarlo.bins.map(b => b.pct),
+        backgroundColor: GG.monteCarlo.bins.map(colorFor),
+        borderColor: line, borderWidth: 1,
       }]
     },
     options: {
-      indexAxis:'y',
-      maintainAspectRatio:false,
+      indexAxis:'y', maintainAspectRatio:false,
       scales: {
-        x:{title:{display:true, text:'Probability (%)', color:muted}, grid:{color:line}, suggestedMax:75},
+        x:{title:{display:true, text:'Probability (%)', color:muted}, grid:{color:line}, suggestedMax:80},
         y:{grid:{color:line}}
       },
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:(ctx)=>` ${ctx.parsed.x}% of 300k runs`}}
+        tooltip:{callbacks:{label:(ctx)=>{
+          const n = (window.__mcRuns || 10000);
+          return ` ${ctx.parsed.x}% of ${n.toLocaleString()} accepted runs`;
+        }}}
       }
     }
   });
+  // Hydrate from the live Node-generated JSON if available.
+  fetch('assets/montecarlo-results.json', { cache:'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      if (!j) return;
+      window.__mcRuns = j.n_accepted;
+      mcChart.data.labels = j.bins.map(b => b.label);
+      mcChart.data.datasets[0].data = j.bins.map(b => b.pct);
+      mcChart.data.datasets[0].backgroundColor = j.bins.map(colorFor);
+      mcChart.update();
+      // Patch summary boxes if present
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('mc-runs',    j.n_accepted.toLocaleString());
+      set('mc-holds',   j.holds_pct.toFixed(1) + ' %');
+      set('mc-cross',   j.crosses_pct.toFixed(1) + ' %');
+      set('mc-median',  j.median_crossing_label || '— (held)');
+      set('mc-iqr',     j.iqr_p25_label && j.iqr_p75_label
+                        ? `${j.iqr_p25_label} → ${j.iqr_p75_label}` : '—');
+      set('mc-accept',  j.acceptance_rate.toFixed(1) + ' %');
+      set('mc-peak50',  j.peak_p50_F?.toFixed(0) + ' °F');
+      set('mc-peak90',  j.peak_p90_F?.toFixed(0) + ' °F');
+      set('mc-asof',    new Date(j.generated_at).toLocaleString());
+    })
+    .catch(()=>{});
 
   // ---------- Chart 3: Forecast ambient ----------
   new Chart(document.getElementById('chart-forecast'), {

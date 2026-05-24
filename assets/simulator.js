@@ -16,7 +16,7 @@
   // and tips through the ~100 °F (310.93 K) field-reported threshold under
   // the "cooling lost" preset.
   const defaults = {
-    A:        1.2e10,    // 1/s         pre-exponential
+    A:        5.0e10,    // 1/s         pre-exponential (calibrated to ~1°F/hr at I0=0.3, UA=2200)
     Ea:       95000,     // J/mol       activation energy (representative MMA bulk)
     deltaH:   57700,     // J/mol       heat of polymerization
     inhibitorMol: 0.4,   // mol         total MEHQ-equivalent (small relative to monomer)
@@ -52,7 +52,8 @@
     const g = gel(X);
     const dX = k * Math.max(0, 1 - X) * Math.max(0, 1 - I) * g;
     const dI = -p.cInh * k;
-    const Qgen = p.mMonomer * (p.deltaH / 100.12) * dX;            // W (per kg-monomer × dX/dt × ΔH per kg)
+    // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
+    const Qgen  = p.mMonomer * (p.deltaH / 0.10012) * dX;
     const Qcool = p.UA * (T - p.Twater) - solar(state.t, p.solarAmp);
     const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
     return {dT, dX, dI};
@@ -80,13 +81,16 @@
     const totalSteps = Math.round(hoursForward * 3600 / dt);
     const sample = Math.max(1, Math.round(totalSteps / 400));
     const out = {t:[], TF:[], Qgen:[], Qcool:[], X:[], crossed:null, runaway:false};
-    let state = {t: startHour, T: p.T0, X: 0.0, I: 1.0};
+    // I0 reflects this tank's reality: MEHQ is partially depleted (that's
+    // why polymerization is happening at all).
+    const I0 = (p.I0 !== undefined) ? p.I0 : 0.30;
+    let state = {t: startHour, T: p.T0, X: 0.02, I: I0};
 
     for (let i = 0; i <= totalSteps; i++){
       if (i % sample === 0){
         const k = p.A * Math.exp(-p.Ea / (R * state.T));
         const dX = k * Math.max(0,1-state.X) * Math.max(0,1-state.I) * gel(state.X);
-        const Qgen = p.mMonomer * (p.deltaH / 100.12) * dX;
+        const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
         const Qcool = p.UA * (state.T - p.Twater);
         out.t.push(state.t);
         out.TF.push(K2F(state.T));

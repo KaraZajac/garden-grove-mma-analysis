@@ -34,7 +34,8 @@
   <a href="#hypothesis">Hypothesis</a>
   <a href="#consequence">Consequence</a>
   <a href="#weather">Weather</a>
-  <a href="#sources">Sources & caveats</a>
+  <a href="#snapshot">Source snapshot</a>
+  <a href="#sources">Caveats</a>
 </nav>
 
 <main>
@@ -44,15 +45,15 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      Conditioned on the tank having already survived ~14 hours past the linear-failure prediction, the most-likely outcome is that the intensified deluge holds (≈67%). Of the failure mass (≈33%), the dominant single window is <b>Sunday 5/24, ~3–6 pm PDT</b> — driven by the convergence of solar load, warmest spray water, and the field-reported ~100 °F "out-of-control" line.
+      The 10k Monte Carlo, conditioned on the tank surviving to now without crossing 100 °F, puts the most-likely outcome at <b>≈78% holds through Wednesday</b>. The remaining <b>~22% failure mass</b> is spread across the week, dominated by Tuesday (~4.5%) and Wed+ (~4.9%), with each day's failure mass concentrated in the afternoon solar peak. The original Sunday-afternoon hypothesis is the soonest credible window but no longer the most-likely; the survival history has pushed the posterior later.
     </div>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Primary window</div><div class="v">Sun 3–6 pm PDT</div><div class="vsm">Solar + warm spray water</div></div>
-    <div class="box"><div class="k">Center estimate</div><div class="v">~4 pm PDT</div><div class="vsm">≈ 7 pm EDT</div></div>
-    <div class="box"><div class="k">Secondary window</div><div class="v">Mon 3–6 pm PDT</div><div class="vsm">If Sunday holds</div></div>
-    <div class="box"><div class="k">Holds (no crossing)</div><div class="v">≈ 67%</div><div class="vsm">Conditioned on survival</div></div>
+    <div class="box"><div class="k">Holds through Wed</div><div class="v">≈ 78 %</div><div class="vsm">Posterior, conditioned on survival</div></div>
+    <div class="box"><div class="k">Median crossing (if it fails)</div><div class="v">Mon ~9 pm PDT</div><div class="vsm">IQR: Sun eve → Wed early am</div></div>
+    <div class="box"><div class="k">Soonest credible window</div><div class="v">Sun 12–7 pm PDT</div><div class="vsm">~1.7% — first solar peak</div></div>
+    <div class="box"><div class="k">Largest single window</div><div class="v">Wed or later</div><div class="vsm">~4.9% — slow grind</div></div>
   </div>
 </section>
 
@@ -189,15 +190,17 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Runs</div><div class="v">300,000</div></div>
-    <div class="box"><div class="k">Holds</div><div class="v">≈ 67 %</div></div>
-    <div class="box"><div class="k">Crosses</div><div class="v">≈ 33 %</div></div>
-    <div class="box"><div class="k">Median crossing</div><div class="v">Sun ~3:40 pm</div><div class="vsm">IQR: Sun midday → Mon afternoon</div></div>
+    <div class="box"><div class="k">Accepted runs</div><div class="v" id="mc-runs">10,000</div><div class="vsm">acceptance <span id="mc-accept">—</span></div></div>
+    <div class="box"><div class="k">Holds</div><div class="v" id="mc-holds">— %</div><div class="vsm">no crossing through Wed</div></div>
+    <div class="box"><div class="k">Crosses</div><div class="v" id="mc-cross">— %</div><div class="vsm">first 100 °F crossing recorded</div></div>
+    <div class="box"><div class="k">Median crossing</div><div class="v" id="mc-median">—</div><div class="vsm">IQR: <span id="mc-iqr">—</span></div></div>
   </div>
 
   <div class="callout">
-    <b>Read the asymmetry, not just the number.</b> The 67/33 split is sensitive to the (subjective) drift prior. What is robust is the <i>shape</i>: failure mass is clustered in afternoons, nights are nearly empty, and each surviving afternoon shifts the posterior meaningfully later.
+    <b>The big shift from the first-pass estimate.</b> The earlier brief named Sunday afternoon as the dominant window with 13% probability. The properly-conditioned 10k MC redistributes that mass: surviving past hour 54 prunes the fastest-failure trajectories, so the failure mass shifts later in the week. Peak-temperature distribution is bimodal — P50 ≈ <span id="mc-peak50">—</span> (essentially holding) but P90 ≈ <span id="mc-peak90">—</span> (full thermal runaway in the worst 10%). The actionable shape is still afternoon-clustered within each day; what changed is which day.
   </div>
+
+  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Results generated: <span id="mc-asof">—</span> · run with <code>node scripts/montecarlo.js 10000</code></p>
 </section>
 
 <!-- HYPOTHESIS -->
@@ -256,8 +259,9 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
         <input id="c-wind" type="range" min="0.5" max="10" step="0.5" value="3" />
       </div>
       <div data-branch="vapor">
-        <div class="row"><label>Wind bearing (downwind)</label><span id="c-dir-v">90°</span></div>
-        <input id="c-dir" type="range" min="0" max="359" step="5" value="90" />
+        <div class="row"><label>Wind bearing (downwind, toward)</label><span id="c-dir-v">60°</span></div>
+        <input id="c-dir" type="range" min="0" max="359" step="5" value="60" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Default 60° (ENE) = current SW sea-breeze regime per NWS</div>
       </div>
       <div data-branch="vapor">
         <label>Pasquill stability</label>
@@ -337,9 +341,45 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
   </div>
 </section>
 
-<!-- SOURCES -->
+<!-- SOURCE SNAPSHOT -->
+<section id="snapshot">
+  <h2>9 — Open-source snapshot</h2>
+  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 so the analysis is reproducible even if the original articles disappear or paywall over. Three parallel research agents gathered the news coverage, chemistry/technical references, and the local weather/environment picture.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Snapshot stats</h4>
+      <ul>
+        <li><b>News</b> — 17 articles across 12 outlets (~43 KB)</li>
+        <li><b>Reference</b> — 11 chemistry/technical files + index (~62 KB)</li>
+        <li><b>Weather/environment</b> — 8 environmental files + index (~40 KB)</li>
+        <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Use it</h4>
+      <ul>
+        <li>Click any row in the tables below to open the snapshot on GitHub</li>
+        <li>Clone the repo to read offline: <code>git clone https://github.com/KaraZajac/garden-grove-mma-analysis</code></li>
+        <li>The <code>INDEX.md</code> in each subfolder is the most efficient starting point</li>
+        <li>Updated snapshots should drop into the same folders — keep the format</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>News (<span id="src-count-news">—</span>)</h3>
+  <table><thead><tr><th>File</th><th>Outlet</th><th>Note</th></tr></thead><tbody id="src-news"></tbody></table>
+
+  <h3>Reference (<span id="src-count-ref">—</span>)</h3>
+  <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-ref"></tbody></table>
+
+  <h3>Weather &amp; environment (<span id="src-count-wx">—</span>)</h3>
+  <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-wx"></tbody></table>
+</section>
+
+<!-- CAVEATS -->
 <section id="sources">
-  <h2>9 — Sources, Caveats, Limitations</h2>
+  <h2>10 — Caveats &amp; limitations</h2>
 
   <h3>Key recon findings</h3>
   <table>
@@ -349,19 +389,13 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
 
   <h3>Caveats</h3>
   <ul>
-    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this exact aged, partially-polymerized batch.</li>
-    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank.</li>
-    <li>The 67/33 split depends on a subjective drift prior. The asymmetry (afternoons load-bearing, nights nearly empty) is the robust finding.</li>
-    <li>Drone scans every 10 minutes are exterior proxies; interior temperature has not been publicly updated since the Fri ~10 pm 90 °F reading.</li>
-    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is conservative on timing.</li>
-  </ul>
-
-  <h3>Open-source sources</h3>
-  <ul>
-    <li>OCFA briefings and quotes — ABC7, CBS News, PBS, CNN, FOX 11, ARTVOICE, The Derrick</li>
-    <li>MMA physical constants — Wikipedia / supplier SDS (MEHQ-inhibited grades)</li>
-    <li>Garden Grove forecast — WeatherForYou</li>
-    <li>Historical analog — Rohm &amp; Haas 2010 MMA tank-car polymerization release (Louisville, KY)</li>
+    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this exact aged, partially-polymerized batch. The pre-exponential <code>A</code> is phenomenologically tuned so the baseline trajectory reproduces the observed ~1 °F/hr early rise — that is a calibration, not a first-principles result.</li>
+    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank. The MC samples it as N(100, 4) °F.</li>
+    <li>The 78/22 split is the posterior <i>given</i> survival to hour 54. It is sensitive to the priors (especially the cooling-effectiveness log-normal). What is robust is the <i>shape</i> — afternoons load-bearing, nights nearly empty.</li>
+    <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number; chats with the field response history previously flagged the same magnitude as misleading. Treated as a separate timeline series, not an interior anchor.</li>
+    <li>Drone scans every 10 minutes are exterior proxies; <b>no new interior reading</b> has been publicly released since Fri ~10 pm (90 °F).</li>
+    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely conservative on timing.</li>
+    <li>The consequence model uses textbook screening formulas (Brode overpressure, point-source thermal radiation, Pasquill-Gifford dispersion with mild heavy-gas correction). Real footprints depend on terrain and congestion that these formulas do not capture.</li>
   </ul>
 
   <div class="callout crit">
@@ -406,6 +440,26 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
     tr.innerHTML = `<td>${r.k}</td><td><b>${r.v}</b></td><td>${r.note}</td>`;
     rb.appendChild(tr);
   });
+
+  // Source-snapshot tables
+  function renderSources(tbodyId, items, folder, countId){
+    const tb = document.getElementById(tbodyId);
+    if (!tb) return;
+    items.forEach(([file, source, note])=>{
+      const tr = document.createElement('tr');
+      const url = `${GG.repoBase}sources/${folder}/${file}`;
+      tr.innerHTML =
+        `<td><a href="${url}" target="_blank" rel="noopener"><code>${file}</code></a></td>`+
+        `<td>${source}</td>`+
+        `<td>${note}</td>`;
+      tb.appendChild(tr);
+    });
+    const c = document.getElementById(countId);
+    if (c) c.textContent = items.length + ' files';
+  }
+  renderSources('src-news', GG.sources.news,      'news',              'src-count-news');
+  renderSources('src-ref',  GG.sources.reference, 'reference',         'src-count-ref');
+  renderSources('src-wx',   GG.sources.weather,   'weather-environment','src-count-wx');
 })();
 </script>
 

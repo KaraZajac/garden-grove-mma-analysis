@@ -143,8 +143,9 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink
   display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;
   padding:2px 6px;border-radius:3px;text-transform:uppercase;border:1px solid;
 }
-.tag.measured     {color:var(--ctp-green);   border-color:var(--ctp-green)}
-.tag.modeled      {color:var(--ctp-yellow);  border-color:var(--ctp-yellow)}
+.tag.measured           {color:var(--ctp-green);  border-color:var(--ctp-green)}
+.tag.measured-exterior  {color:var(--ctp-teal);   border-color:var(--ctp-teal)}
+.tag.modeled            {color:var(--ctp-yellow); border-color:var(--ctp-yellow)}
 .tag.hypothesized {color:var(--ctp-mauve);   border-color:var(--ctp-mauve)}
 .tag.ok           {color:var(--ok);          border-color:var(--ok)}
 .tag.warn         {color:var(--warn);        border-color:var(--warn)}
