@@ -1,84 +1,84 @@
 {
-  "generated_at": "2026-05-24T06:29:42.339Z",
+  "generated_at": "2026-05-24T06:37:12.689Z",
   "n_per_variant": 1500,
-  "duration_sec": 157.3,
+  "duration_sec": 173.4,
   "baseline": {
     "accepted": 1500,
-    "attempted": 5117,
-    "holdsPct": 69,
-    "crossesPct": 31,
-    "medianHr": 85
+    "attempted": 6379,
+    "holdsPct": 66.73,
+    "crossesPct": 33.27,
+    "medianHr": 83.8
   },
   "results": [
     {
       "parameter": "Twater (spray water)",
       "low_value": "{\"Twater\":293.15}",
       "high_value": "{\"Twater\":299.81666666666666}",
-      "low_crosses_pct": 22.13,
-      "high_crosses_pct": 37,
-      "low_median_hr": 83.8,
-      "high_median_hr": 84.3,
-      "delta_crosses_pct": 14.87
+      "low_crosses_pct": 24.47,
+      "high_crosses_pct": 41.87,
+      "low_median_hr": 88.2,
+      "high_median_hr": 81.5,
+      "delta_crosses_pct": 17.4
     },
     {
       "parameter": "fPlate (polymer fouling)",
       "low_value": "{\"fPlate\":0.1}",
       "high_value": "{\"fPlate\":0.6}",
-      "low_crosses_pct": 26.93,
-      "high_crosses_pct": 35.4,
-      "low_median_hr": 89.6,
-      "high_median_hr": 79.6,
-      "delta_crosses_pct": 8.47
-    },
-    {
-      "parameter": "A_cool (wetted area)",
-      "low_value": "{\"A_cool\":30}",
-      "high_value": "{\"A_cool\":55}",
-      "low_crosses_pct": 33.6,
-      "high_crosses_pct": 26,
-      "low_median_hr": 80.9,
-      "high_median_hr": 89.1,
-      "delta_crosses_pct": 7.6
+      "low_crosses_pct": 29.73,
+      "high_crosses_pct": 39.47,
+      "low_median_hr": 89.7,
+      "high_median_hr": 81.1,
+      "delta_crosses_pct": 9.74
     },
     {
       "parameter": "threshold T (runawayF)",
       "low_value": "{\"runawayF\":95}",
       "high_value": "{\"runawayF\":108}",
-      "low_crosses_pct": 29.47,
-      "high_crosses_pct": 34.67,
-      "low_median_hr": 85.2,
-      "high_median_hr": 80.2,
-      "delta_crosses_pct": 5.2
+      "low_crosses_pct": 31.13,
+      "high_crosses_pct": 37.13,
+      "low_median_hr": 87.5,
+      "high_median_hr": 81.3,
+      "delta_crosses_pct": 6
+    },
+    {
+      "parameter": "A_cool (wetted area)",
+      "low_value": "{\"A_cool\":30}",
+      "high_value": "{\"A_cool\":55}",
+      "low_crosses_pct": 37.4,
+      "high_crosses_pct": 31.6,
+      "low_median_hr": 81.5,
+      "high_median_hr": 84.7,
+      "delta_crosses_pct": 5.8
     },
     {
       "parameter": "T0 (anchor temp)",
       "low_value": "{\"T0\":304.26111111111106}",
       "high_value": "{\"T0\":306.4833333333333}",
-      "low_crosses_pct": 31.6,
-      "high_crosses_pct": 26.8,
-      "low_median_hr": 83.9,
-      "high_median_hr": 85.1,
-      "delta_crosses_pct": 4.8
-    },
-    {
-      "parameter": "I0 (initial inhibitor)",
-      "low_value": "{\"I0\":0.05}",
-      "high_value": "{\"I0\":0.6}",
-      "low_crosses_pct": 30.73,
-      "high_crosses_pct": 27.67,
-      "low_median_hr": 87.2,
-      "high_median_hr": 85.6,
-      "delta_crosses_pct": 3.06
+      "low_crosses_pct": 35.47,
+      "high_crosses_pct": 32.73,
+      "low_median_hr": 84.5,
+      "high_median_hr": 83.5,
+      "delta_crosses_pct": 2.74
     },
     {
       "parameter": "UA (cooling effectiveness)",
       "low_value": "{\"UA\":1000}",
       "high_value": "{\"UA\":3500}",
-      "low_crosses_pct": 30.27,
-      "high_crosses_pct": 33,
-      "low_median_hr": 81.7,
-      "high_median_hr": 88.8,
-      "delta_crosses_pct": 2.73
+      "low_crosses_pct": 33,
+      "high_crosses_pct": 34,
+      "low_median_hr": 82,
+      "high_median_hr": 85.1,
+      "delta_crosses_pct": 1
+    },
+    {
+      "parameter": "I0 (initial inhibitor)",
+      "low_value": "{\"I0\":0.05}",
+      "high_value": "{\"I0\":0.6}",
+      "low_crosses_pct": 32.07,
+      "high_crosses_pct": 32.13,
+      "low_median_hr": 81.9,
+      "high_median_hr": 83.1,
+      "delta_crosses_pct": 0.06
     },
     {
       "parameter": "Ea (activation energy)",

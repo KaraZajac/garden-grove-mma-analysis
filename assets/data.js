@@ -88,6 +88,7 @@ window.GG = {
       ["frank-kamenetskii-theory.md",     "Wikipedia",   "Frank-Kamenetskii / Semenov critical δ"],
       ["csb-rohm-haas-2010.md",           "CSB / news",  "Historical analog — 2010 Rohm & Haas MMA tank-car release"],
       ["mma-polymerization-incidents.md", "Composite",   "Other MMA / acrylic runaway incidents"],
+      ["model-audit-2026-05-24.md",       "Internal audit","Independent agent review of the simulator math/physics"],
       ["mma-sds-composite.md",            "Composite SDS","MMA safety data — composite from multiple suppliers"],
       ["epa-rmp-reference.md",            "EPA",         "Risk Management Program reference (MMA not on §112(r))"],
       ["nfpa-704-mma.md",                 "NFPA",        "NFPA 704 hazard diamond for MMA — 2/3/2"],

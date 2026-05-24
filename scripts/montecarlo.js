@@ -22,8 +22,10 @@ const F2K = f => (f - 32) * 5/9 + 273.15;
 const K2F = k => (k - 273.15) * 9/5 + 32;
 
 function gel(X){ return X < 0.05 ? 1.0 : 1 + 18 * Math.pow(X, 2.2); }
+// Hour 0 = Thu 5/21 3:40 pm PDT — convert integration time → clock-of-day.
+const T0_CLOCK_HOUR = 15.667;
 function solar(tHours, amp){
-  const hod = ((tHours % 24) + 24) % 24;
+  const hod = ((tHours + T0_CLOCK_HOUR) % 24 + 24) % 24;
   const phase = Math.cos(((hod - 15) / 24) * 2 * Math.PI);
   return Math.max(0, phase) * amp;
 }
@@ -42,7 +44,9 @@ function effectiveUA(UA_clean, X, p){
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0, 1 - s.X) * Math.max(0, 1 - s.I) * gel(s.X);
-  const dI = -p.cInh * k;
+  // O2 cliff — MEHQ inert once O2 depleted; X > 0.005 triggers fast inhibitor collapse.
+  const o2_collapse_rate = (s.X > 0.005) ? 5e-4 * s.I : 0;
+  const dI = -p.cInh * k - o2_collapse_rate;
   // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
   const Qgen   = p.mMonomer * (p.deltaH / 0.10012) * dX;
   const UA_eff = effectiveUA(p.UA, s.X, p);

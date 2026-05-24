@@ -16,8 +16,9 @@ const F2K = f => (f - 32) * 5/9 + 273.15;
 const K2F = k => (k - 273.15) * 9/5 + 32;
 const clamp01 = x => Math.min(1, Math.max(0, x));
 function gel(X){ return X < 0.05 ? 1.0 : 1 + 18 * Math.pow(X, 2.2); }
+const T0_CLOCK_HOUR = 15.667;
 function solar(tH, amp){
-  const hod = ((tH % 24) + 24) % 24;
+  const hod = ((tH + T0_CLOCK_HOUR) % 24 + 24) % 24;
   return Math.max(0, Math.cos(((hod-15)/24)*2*Math.PI)) * amp;
 }
 function effectiveUA(UA_clean, X, p){
@@ -30,7 +31,8 @@ function effectiveUA(UA_clean, X, p){
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0,1-s.X) * Math.max(0,1-s.I) * gel(s.X);
-  const dI = -p.cInh * k;
+  const o2_collapse_rate = (s.X > 0.005) ? 5e-4 * s.I : 0;
+  const dI = -p.cInh * k - o2_collapse_rate;
   const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
   const UA_e = effectiveUA(p.UA, s.X, p);
   const Qcool = UA_e * (s.T - p.Twater) - solar(s.t, p.solarAmp);

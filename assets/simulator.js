@@ -59,8 +59,11 @@
 
   // Diurnal solar modulation. tHours since incident start (Hr 0 = Thu 3:40 pm PDT).
   // Solar peak ~ 3 pm local, so cos peak at hour-of-day = 15.
+  // Hour 0 of the integration = Thu 5/21 3:40 pm PDT (clock-hour 15.667).
+  // Convert integration time → local clock-hour-of-day before phase calc.
+  const T0_CLOCK_HOUR = 15.667;
   function solar(tHours, amp){
-    const hod = ((tHours % 24) + 24) % 24;
+    const hod = ((tHours + T0_CLOCK_HOUR) % 24 + 24) % 24;
     const phase = Math.cos(((hod - 15) / 24) * 2 * Math.PI);
     return Math.max(0, phase) * amp;
   }
@@ -70,7 +73,12 @@
     const k = p.A * Math.exp(-p.Ea / (R * T));
     const g = gel(X);
     const dX = k * Math.max(0, 1 - X) * Math.max(0, 1 - I) * g;
-    const dI = -p.cInh * k;
+    // MEHQ requires dissolved O2 to function (see sources/reference/mehq-inhibitor.md).
+    // Once polymerization consumes the available O2 (X > ~0.005), the inhibitor
+    // collapses on a much shorter timescale — minutes-to-hours, not the
+    // 2,500-hour timescale of cInh·k alone. Model that cliff explicitly.
+    const o2_collapse_rate = (X > 0.005) ? 5e-4 * I : 0;
+    const dI = -p.cInh * k - o2_collapse_rate;
     // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
     const Qgen  = p.mMonomer * (p.deltaH / 0.10012) * dX;
     const UA_eff = effectiveUA(p.UA, X, p);
