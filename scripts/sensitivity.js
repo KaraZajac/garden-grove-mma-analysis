@@ -28,6 +28,16 @@ function effectiveUA(UA_clean, X, p){
   const delta = p.fPlate * X * p.mMonomer / (p.rhoPmma * A_c);
   return (1 / (1/U_clean + delta / p.kPmma)) * A_c;
 }
+function evapCooling(T_K, p){
+  if (!p.evapOn) return 0;
+  const h_m = p.h_m ?? 0.02;
+  const A_c = p.A_cool;
+  const h_fg = 2.26e6, MW = 0.018, RH = p.RH ?? 0.60;
+  const T_film = p.Twater + 0.5 * Math.max(0, T_K - p.Twater);
+  const pSat = TK => 611 * Math.exp(17.27 * (TK - 273.15) / (TK - 273.15 + 237.3));
+  const driving = Math.max(0, pSat(T_film) - RH * pSat(p.Twater));
+  return h_m * A_c * (driving / (R * T_film)) * MW * h_fg;
+}
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0,1-s.X) * Math.max(0,1-s.I) * gel(s.X);
@@ -35,7 +45,8 @@ function step(s, p){
   const dI = -p.cInh * k - o2_collapse_rate;
   const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
   const UA_e = effectiveUA(p.UA, s.X, p);
-  const Qcool = UA_e * (s.T - p.Twater) - solar(s.t, p.solarAmp);
+  const Q_ev = evapCooling(s.T, p);
+  const Qcool = UA_e * (s.T - p.Twater) + Q_ev - solar(s.t, p.solarAmp);
   return { dT:(Qgen-Qcool)/(p.mMonomer*p.Cp), dX, dI };
 }
 function rk4(s, dt, p){
@@ -86,6 +97,9 @@ function sampleParams(overrides){
     A_cool:   clamp(40 + 8 * randn(), 25, 70),
     kPmma:    0.19,
     rhoPmma:  1180,
+    evapOn:   true,
+    h_m:      Math.exp(Math.log(0.012) + 0.85 * randn()),
+    RH:       clamp(0.60 + 0.10 * randn(), 0.30, 0.85),
   };
   return Object.assign(p, overrides);
 }
@@ -135,6 +149,10 @@ const sweeps = [
     low:  { Twater: F2K(68) }, high: { Twater: F2K(80) } },
   { name: 'A_cool (wetted area)',
     low:  { A_cool: 30 },   high: { A_cool: 55 } },
+  { name: 'h_m (evap mass-transfer)',
+    low:  { h_m: 0.004 },   high: { h_m: 0.035 } },
+  { name: 'RH (ambient humidity)',
+    low:  { RH: 0.35 },     high: { RH: 0.80 } },
 ];
 
 const N = parseInt(process.argv[2] || '1500', 10);

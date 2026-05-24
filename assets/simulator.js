@@ -36,6 +36,10 @@
     A_cool:   40,        // m²    wetted shell area
     kPmma:    0.19,      // W/(m·K) PMMA thermal conductivity
     rhoPmma:  1180,      // kg/m³
+    // Evaporative cooling from the deluge film (latent heat). Big effect.
+    evapOn:   true,
+    h_m:      0.02,      // m/s   mass-transfer coefficient (moderate wind)
+    RH:       0.60,      // ambient relative humidity
   };
 
   // U_eff(X) = 1 / (1/U_clean + δ(X) / k_pmma)
@@ -48,6 +52,24 @@
     const R_foul = delta / p.kPmma;
     const U_eff = 1 / (1/U_clean + R_foul);
     return U_eff * A_c;
+  }
+
+  // Evaporative cooling from the deluge film on the outside of the shell.
+  // Water film temperature ≈ T_water + ½·max(0, T_bulk − T_water).
+  // Magnus formula for water saturation pressure. Driving force = P_sat(film) − RH·P_sat(air).
+  function evapCooling(T_bulk_K, p){
+    if (!p.evapOn) return 0;
+    const h_m  = p.h_m ?? 0.02;            // mass-transfer coefficient (m/s, wind 1–4 m/s)
+    const A_c  = p.A_cool;
+    const h_fg = 2.26e6;                    // J/kg, water
+    const MW   = 0.018;                     // kg/mol, water
+    const RH   = p.RH ?? 0.60;
+    const T_air_K = p.Twater;               // assume air T ≈ deluge water T
+    const T_film  = p.Twater + 0.5 * Math.max(0, T_bulk_K - p.Twater);
+    const pSat = TK => 611 * Math.exp(17.27 * (TK - 273.15) / (TK - 273.15 + 237.3));
+    const driving = Math.max(0, pSat(T_film) - RH * pSat(T_air_K));      // Pa
+    const dC = driving / (R * T_film);                                    // mol/m³
+    return h_m * A_c * dC * MW * h_fg;                                    // W
   }
 
   // Trommsdorff gel-effect autoacceleration amplifier.
@@ -80,9 +102,10 @@
     const o2_collapse_rate = (X > 0.005) ? 5e-4 * I : 0;
     const dI = -p.cInh * k - o2_collapse_rate;
     // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
-    const Qgen  = p.mMonomer * (p.deltaH / 0.10012) * dX;
+    const Qgen   = p.mMonomer * (p.deltaH / 0.10012) * dX;
     const UA_eff = effectiveUA(p.UA, X, p);
-    const Qcool = UA_eff * (T - p.Twater) - solar(state.t, p.solarAmp);
+    const Q_evap = evapCooling(T, p);
+    const Qcool  = UA_eff * (T - p.Twater) + Q_evap - solar(state.t, p.solarAmp);
     const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
     return {dT, dX, dI};
   }
@@ -120,7 +143,7 @@
         const k = p.A * Math.exp(-p.Ea / (R * state.T));
         const dX = k * Math.max(0,1-state.X) * Math.max(0,1-state.I) * gel(state.X);
         const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
-        const Qcool = effectiveUA(p.UA, state.X, p) * (state.T - p.Twater);
+        const Qcool = effectiveUA(p.UA, state.X, p) * (state.T - p.Twater) + evapCooling(state.T, p);
         out.t.push(state.t);
         out.TF.push(K2F(state.T));
         out.Qgen.push(Qgen);

@@ -26,35 +26,60 @@
 
 <nav class="toc">
   <a href="#bluf">BLUF</a>
+  <a href="#changes">What changed</a>
   <a href="#chemistry">Chemistry</a>
   <a href="#timeline">Timeline</a>
   <a href="#model">Model</a>
   <a href="#simulator">Simulator</a>
   <a href="#monte-carlo">Monte Carlo</a>
+  <a href="#sensitivity">Sensitivity</a>
   <a href="#hypothesis">Hypothesis</a>
   <a href="#consequence">Consequence</a>
   <a href="#weather">Weather</a>
-  <a href="#snapshot">Source snapshot</a>
-  <a href="#sources">Caveats</a>
+  <a href="#snapshot">Sources</a>
+  <a href="#reproduce">Reproduce</a>
+  <a href="#caveats">Caveats</a>
 </nav>
 
 <main>
+
+<!-- SCOPE -->
+<section id="about" style="margin-bottom:32px">
+  <div class="callout warn">
+    <b>What this is.</b> An open-source modeling exercise built from public reporting. <b>What this is NOT</b> — an OCFA product, an engineered-safety analysis, or operational guidance. Numbers are screening estimates with explicit uncertainty bands. If you are in the evacuation zone, follow official instructions, not this page. Last updated: <span id="page-asof">2026-05-24</span> · model auto-refreshes hourly (<a href="https://github.com/KaraZajac/garden-grove-mma-analysis/commits/main" target="_blank" rel="noopener">commit log</a>).
+  </div>
+</section>
 
 <!-- BLUF -->
 <section id="bluf">
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      The 10k Monte Carlo — now including <b>PMMA wall-fouling feedback</b>, the <b>O₂–MEHQ cliff</b>, and a <b>fixed solar phase</b> (audit caught two real bugs) — puts the most-likely outcome at <b>≈66% holds</b> through midweek. The remaining <b>~34% failure mass</b> clusters in the near-term (Sat night → Sun 6 am ≈ 6%) and again in the slow-grind window (Wed+). Median crossing time, if it fails, is Mon ~4 am PDT.
+      The 10k Monte Carlo — full physics (PMMA wall fouling, O₂–MEHQ cliff, clock-aligned solar, <b>evaporative cooling from the deluge</b>) — puts holds at <b><span id="bluf-holds">~94</span>%</b> through Wednesday. The latent-heat term added in the last hour roughly doubles the cooling capacity (water film evaporation ~ sensible cooling at 90 °F) and is the biggest reason the posterior shifted. The remaining failure mass clusters earliest in the next 6 hours (largest single bin) and again in the Wed+ slow-grind tail. <b>This is highly sensitive to the deluge mass-transfer coefficient</b> (h_m) — see the sensitivity section. Median crossing time <i>if</i> it fails: <span id="bluf-median">Sun evening PDT</span>.
     </div>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Holds</div><div class="v">≈ 69 %</div><div class="vsm">Posterior with PMMA fouling enabled</div></div>
-    <div class="box"><div class="k">Median crossing</div><div class="v">Mon ~5 am PDT</div><div class="vsm">IQR: Sun am → Tue afternoon</div></div>
-    <div class="box"><div class="k">Largest single window</div><div class="v">Sat night → Sun 6 am</div><div class="vsm">≈ 5.9% — near-term fouling tip-over</div></div>
-    <div class="box"><div class="k">Secondary cluster</div><div class="v">Wed or later</div><div class="vsm">≈ 5.1% — slow-grind path</div></div>
+    <div class="box"><div class="k">Holds</div><div class="v" id="bluf-holds-2">— %</div><div class="vsm">Posterior, with evap cooling</div></div>
+    <div class="box"><div class="k">Median crossing</div><div class="v" id="bluf-median-2">—</div><div class="vsm">IQR: <span id="bluf-iqr">—</span></div></div>
+    <div class="box"><div class="k">Most-likely failure window</div><div class="v" id="bluf-top-bin">Sat night → Sun 6 am</div><div class="vsm" id="bluf-top-pct">≈ —</div></div>
+    <div class="box"><div class="k">Top sensitivity</div><div class="v" id="bluf-sens-top">Spray water T</div><div class="vsm" id="bluf-sens-delta">Δ —</div></div>
   </div>
+</section>
+
+<!-- WHAT CHANGED -->
+<section id="changes">
+  <h2>What changed recently</h2>
+  <p>Active model. Brief audit trail of substantive shifts in this session, latest first:</p>
+  <ul>
+    <li><b>Evaporative cooling from the deluge.</b> Gap analysis flagged the latent-heat term as missing — water film on a hot shell evaporates at 2.26 MJ/kg, roughly doubling the cooling capacity at typical conditions. Added with conservative h_m prior. Net effect: holds 66% → ~94%.</li>
+    <li><b>Audit found and fixed two bugs.</b> (a) The solar phase was anchored to integration time instead of clock time — solar peak was firing at ~6:40 am the next day instead of 3 pm (≈ 9 h phase error). (b) MEHQ inhibitor was never coupled to O₂; depletion timescale was unphysically slow. Both fixed; full report at <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a>.</li>
+    <li><b>PMMA wall fouling added.</b> Polymer skin on the inside of the tank wall (k = 0.19 W/m·K) is now a serial thermal resistance that grows with conversion X. At X = 2% cooling drops 50%; at X = 10% it drops 85%. This is the dominant positive feedback in the runaway dynamics — flipped the largest single failure window from "Wed or later" to the next 6 hours.</li>
+    <li><b>10k Monte Carlo with proper Approximate Bayesian Computation</b> replacing the earlier 300k synthetic distribution. Trajectories are now drawn from priors, integrated forward from the 90 °F anchor, and conditioned on surviving to the present.</li>
+    <li><b>Sensitivity sweep</b> identified spray-water temperature as the dominant lever (Δ 17.4% across the plausible range) — bigger than UA itself once fouling is in the model.</li>
+    <li><b>Full source snapshot</b> — 38 markdown files of news, references, and weather/environment captured for offline reproducibility. Sources tab below.</li>
+    <li><b>Hourly auto-refresh routine</b> running in the cloud — searches for new sources every hour, re-runs both models, and pushes if anything changed.</li>
+  </ul>
 </section>
 
 <!-- CHEMISTRY -->
@@ -115,21 +140,32 @@
 
   <div class="card">
     <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
-k(T)        = A · exp(−Ea / R·T)                     Arrhenius rate
-dX/dt       = k · (1−X) · (1−I) · g(X)               conversion (g = Trommsdorff gel-effect amplifier)
-dI/dt       = −c · k                                 inhibitor (MEHQ) depletion
-δ(X)        = f_plate · X · m / (ρ_PMMA · A_cool)    polymer-skin layer thickness
-R_foul(X)   = δ(X) / k_PMMA                          PMMA thermal resistance
-U_eff(X)    = 1 / (1/U_clean + R_foul(X))            fouled heat-transfer coefficient
-dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
-  Q_gen     = m · ΔH_p · dX/dt                       heat released by polymerization
-  Q_cool    = U_eff(X)·A · (T − T_water) − Q_solar   fouled external cooling minus solar gain
+k(T)        = A · exp(−Ea / R·T)                            Arrhenius rate
+g(X)        = 1                       if X &lt; 0.05
+            = 1 + 18·X^2.2             if X ≥ 0.05           Trommsdorff gel-effect amplifier
+dX/dt       = k · (1−X) · (1−I) · g(X)                       conversion
+dI/dt       = −c · k − c_O2·I·H(X − 0.005)                   MEHQ depletion + O₂-cliff (post-audit)
+δ(X)        = f_plate · X · m / (ρ_PMMA · A_cool)            polymer-skin layer thickness
+R_foul(X)   = δ(X) / k_PMMA                                  PMMA thermal resistance
+U_eff(X)    = 1 / (1/U_clean + R_foul(X))                    fouled heat-transfer coefficient
+Q_evap      = h_m · A_cool · (P_sat(T_film) − RH·P_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
+                                                             deluge latent-heat cooling
+hod(t)      = (t_hr + 15.667) mod 24                         clock-aligned (Hour 0 = Thu 15:40 PDT)
+Q_solar(t)  = S_max · max(0, cos(2π·(hod − 15)/24))          diurnal forcing
+dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
+  Q_gen     = m · ΔH_p · dX/dt                               heat released by polymerization
+  Q_cool    = U_eff(X)·A · (T − T_water) + Q_evap − Q_solar  fouled sensible + evaporative − solar
     </code>
   </div>
 
-  <p><b>The fouling term is the dominant amplifier.</b> PMMA at k = 0.19 W/(m·K) is roughly 300× more insulating than steel — even a few millimeters of polymer skin on the wall meaningfully degrades the deluge's ability to pull heat out of the bulk. At X = 2% the effective cooling drops ~50%; at X = 10% it drops 85%. This is a positive feedback: every degree of warming makes some polymer, which forms insulation, which traps the next degree.</p>
+  <p><b>Three positive-feedback / negative-feedback terms govern the dynamics:</b></p>
+  <ul>
+    <li><b>PMMA wall fouling</b> (positive). k_PMMA = 0.19 W/(m·K) is roughly 300× more insulating than steel — at X = 2% effective cooling drops ~50%; at X = 10% it drops 85%. Chemistry that makes heat also makes the insulation that traps it.</li>
+    <li><b>O₂–MEHQ cliff</b> (positive). MEHQ only inhibits in the presence of dissolved O₂. Once polymerization consumes the O₂ (X &gt; ~0.005), MEHQ goes inert on minutes-to-hours, not the ~2,500 h that <code>dI/dt = −c·k</code> alone gave. This was missing pre-audit.</li>
+    <li><b>Evaporative cooling</b> (negative — added latest). Water film on the hot shell evaporates at latent heat 2.26 MJ/kg. At T_bulk ≈ 90 °F, T_water = 75 °F, h_m = 0.02 m/s the evap term contributes ~26 kW vs ~18 kW sensible — roughly doubles the cooling capacity. Highly sensitive to h_m, which has order-of-magnitude operational uncertainty.</li>
+  </ul>
 
-  <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with temperature while cooling only grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U·A</code>, no stable steady state exists and the temperature climbs toward the adiabatic rise that MMA's heat of polymerization dictates.</p>
+  <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with T while sensible cooling grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U_eff·A</code>, no stable steady state exists. The evaporative term <i>also</i> grows nonlinearly with T (via P_sat), which is why adding it changes the steady-state structure, not just the magnitude.</p>
 
   <div class="callout warn">
     <b>Threshold calibration:</b> the runaway line is set to the responders' own <b>~100 °F "out-of-control"</b> estimate, not a textbook number. Their safe-neutralization target is ~50 °F. Both are verbal field figures, not lab values — see caveats.
@@ -192,11 +228,11 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
 <!-- MONTE CARLO -->
 <section id="monte-carlo">
   <h2>5 — Monte Carlo Failure Window</h2>
-  <p>300,000 simulations sweeping the uncertain parameters (Ea, U·A, inhibitor mass, threshold T), conditioned on the tank having survived to the present without crossing 100 °F. Each surviving afternoon is treated as censored evidence and pushes the posterior later.</p>
+  <p><b>10,000 accepted trajectories</b>, drawn via Approximate Bayesian Computation: sample the uncertain parameters (Ea, U·A, I₀, f_plate, A_cool, T_water, threshold T, T₀, solar amplitude) from broad priors, integrate the ODE forward from the measured 90 °F anchor at hour 30, and <i>reject any trajectory that crosses 100 °F before the present (hour 54)</i> — since the tank demonstrably survived that window. The remaining distribution is the posterior over future failure timing, conditioned on observed survival.</p>
 
   <div class="chart-wrap">
     <h4>Where the failure mass clusters</h4>
-    <p class="cap">Green = the "deluge holds" branch (~67%). Red = the primary failure window. Orange = the secondary window. Grey = other failure timings. Night windows are nearly empty — failure is overwhelmingly an afternoon event.</p>
+    <p class="cap">Green bar = the "deluge holds" branch. Red = primary failure window (largest non-hold bin). Maroon = secondary (Tuesday). Orange/grey = other windows. The shape is what matters: failure mass is bimodal — concentrated near-term (fouling tip-over) and far-term (slow grind), with a relative dip mid-week.</p>
     <canvas id="chart-mc"></canvas>
   </div>
 
@@ -208,39 +244,64 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
   </div>
 
   <div class="callout">
-    <b>What changes when you add PMMA wall fouling.</b> Holds drop from ~78% to ~69% and crossings tighten earlier — median 16 h sooner (Mon ~5 am vs Mon ~9 pm). The biggest single window is no longer "Wed or later" (slow grind) but <b>Sat night → Sun 6 am</b> (~5.9%) — trajectories that barely survived to now have minimal margin against the positive-feedback amplifier. Peak-temperature distribution is bimodal: P50 ≈ <span id="mc-peak50">—</span> (essentially holding) but P90 ≈ <span id="mc-peak90">—</span> (full thermal runaway in the worst 10%).
+    <b>How the posterior evolved this session</b> (most recent first):<br>
+    <ul style="margin:6px 0 0 0;font-size:14px">
+      <li><b>+ Evaporative cooling from the deluge</b> → holds 66% → ~94%. Latent heat ≈ doubles the cooling capacity. Single biggest swing.</li>
+      <li><b>+ Audit fixes</b> (solar phase, O₂ cliff) → holds 69% → 66%.</li>
+      <li><b>+ PMMA wall fouling</b> → holds 78% → 69%, largest window flipped from Wed+ to Sat night → Sun 6 am.</li>
+      <li><b>10k ABC with survival filter</b> (replacing 300k synthetic) → Sun afternoon mass dropped from synthesized 13% to 1.7%, posterior pushed later.</li>
+    </ul>
+    Peak-temperature distribution: P50 ≈ <span id="mc-peak50">—</span>, P90 ≈ <span id="mc-peak90">—</span>.
   </div>
 
-  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Results generated: <span id="mc-asof">—</span> · run with <code>node scripts/montecarlo.js 10000</code></p>
+  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Results generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code></p>
+</section>
+
+<!-- SENSITIVITY -->
+<section id="sensitivity">
+  <h2>6 — Sensitivity Analysis</h2>
+  <p>For each uncertain parameter, hold the others at the priors and pin this one to a low/high tail (~10th vs 90th percentile of its prior). Δ in crosses% tells you how much each input drives the answer. After adding evaporative cooling, the picture changed sharply: the <b>deluge mass-transfer coefficient h_m</b> is now the dominant lever (Δ ~16 pts), and ambient <b>relative humidity</b> is #2. Both of those control how much water actually evaporates per unit time off the wetted shell. The classic levers — UA, polymer fouling, even spray-water temperature — drop in importance because evap is the bigger cooling term once it's modeled.</p>
+
+  <div class="chart-wrap">
+    <h4>Parameter sensitivity (tornado)</h4>
+    <p class="cap">Bar length = absolute change in cross-rate (%) between low and high tails. Longer bar = more sensitive. Numbers near zero (I₀, Ea) mean the answer is robust to those inputs.</p>
+    <canvas id="chart-sens"></canvas>
+  </div>
+
+  <div class="callout">
+    <b>Operationally:</b> the highest-leverage things crews can do are (1) <b>maximize wetted-shell coverage and water flow</b> (drives h_m up) and (2) operate when ambient air is <b>drier</b> (drives RH down, increases evaporation driving force). Both feed the latent-heat term. The model says a high-flow, well-distributed deluge in dry afternoon air is dramatically more effective than the same water in humid morning fog. Spray-water temperature, the previous top lever, drops to #3 once evap is in the model.
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Sensitivity computed with <code>node scripts/sensitivity.js 1500</code>. Loaded from <code>assets/sensitivity.json</code>.</p>
 </section>
 
 <!-- HYPOTHESIS -->
 <section id="hypothesis">
-  <h2>6 — Peak-Danger Hypothesis</h2>
-  <p>Two independent derivations converge on the same window, which is what elevates this from guess to hypothesis:</p>
+  <h2>7 — Peak-Danger Hypothesis (first-pass, now superseded)</h2>
+  <p>This section is preserved for the reasoning trail. The original hypothesis named <b>Sunday 3–6 pm PDT</b> as the dominant failure window from two converging arguments — but the calibrated 10k MC above has overruled that conclusion. Reading this section is useful for understanding how the analysis moved.</p>
 
   <div class="grid-2">
     <div class="card">
-      <h4>Thermodynamic (when can it tip?)</h4>
-      <p>The most adverse heat balance of each day is the afternoon — warmest spray water (~75 °F), direct solar load on the steel shell, weakest deluge effectiveness. If a runaway initiates, it initiates in the afternoon, not overnight.</p>
+      <h4>Thermodynamic (when <i>could</i> it tip?)</h4>
+      <p>The most adverse heat balance of each day is the afternoon — warmest spray water, direct solar load on the steel shell, weakest deluge effectiveness. <b>This argument still stands</b>: failure mass <i>within each day</i> is afternoon-clustered. What it gets wrong is implying afternoons dominate <i>across days</i>. Once the survival filter and the evap-cooling term are in, the Sunday-afternoon window has only modest mass.</p>
     </div>
     <div class="card">
       <h4>Kinetic (when does it get there?)</h4>
-      <p>From 90 °F at Fri ~10 pm at ~1 °F/hr, the tank reaches the ~100 °F field threshold in the 24–48 h window — landing squarely on Sunday afternoon into Sunday night.</p>
+      <p>From 90 °F at Fri ~10 pm at ~1 °F/hr, the tank would reach the ~100 °F field threshold in 24–48 h — landing on Sunday afternoon. <b>But that linear extrapolation ignores PMMA fouling, the deluge intensification, and evaporative cooling.</b> The tank has actually held flat or below ~100 °F well past the linear-projection deadline. The MC's posterior median crossing time is now Sun late evening / Mon early morning, not Sun afternoon.</p>
     </div>
   </div>
 
-  <h3>Competing hypothesis (slow cure)</h3>
-  <p>Incident Commander Covey has floated that the heavy deluge may be letting the tank "cure at a slower rate," spreading the polymerization energy out over time. If correct, there is no single runaway moment — the reactive monomer bleeds off gradually and the failure mode is a spill, not a detonation. The fact that the tank survived Saturday afternoon's solar peak is weak but real evidence in this direction.</p>
+  <h3>Covey's "slow cure" hypothesis</h3>
+  <p>Incident Commander Covey speculated that the heavy deluge might be letting the tank "cure at a slower rate," spreading the polymerization energy out over time. <b>The current model is closer to confirming this than refuting it.</b> Polymer-skin fouling means conversion is preferentially happening at the cold wall surface — exactly where heat is being extracted. The model's high "holds" fraction (~94% with evap cooling on) is consistent with the slow-cure end-state: a spill via PSV venting, not a detonation.</p>
 
-  <div class="callout warn">
-    <b>Confidence:</b> MODERATE on the timing class (afternoon). LOW–MODERATE on the specific day. NOT ASSESSED for absolute probability of failure — that is a hypothesis, not a prediction.
+  <div class="callout">
+    <b>What this section now is:</b> a worked example of why first-pass synthesis from two clean arguments can be wrong when the system has positive-feedback dynamics. The MC's job is exactly to integrate those feedbacks honestly.
   </div>
 </section>
 
 <!-- CONSEQUENCE -->
 <section id="consequence">
-  <h2>7 — Consequence / Blast-Radius Model</h2>
+  <h2>8 — Consequence / Blast-Radius Model</h2>
   <p>If the tank fails, what does the footprint look like? This model takes three failure branches — liquid spill, vapor cloud, vapor-cloud explosion (VCE) — and renders the impact zones on a real map against the OCFA evacuation polygon. Formulas are textbook screening models (TNT-equivalent / Brode overpressure, point-source thermal radiation, Gaussian dispersion with heavy-gas correction). Drag the marker if you want to refine the facility location.</p>
 
   <div class="sim">
@@ -342,28 +403,28 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
 
 <!-- WEATHER -->
 <section id="weather">
-  <h2>8 — Weather Context</h2>
-  <p>Garden Grove forecast highs cap around 76 °F and never approach the tank's ~90 °F+ interior, so the spray water can in principle always pull heat out. The cooling capacity is the binding constraint, not water temperature. The relevant modulation is the ~18 °F day/night swing — and the slow cooling trend across the week, which gently lowers each successive afternoon peak.</p>
+  <h2>9 — Weather Context</h2>
+  <p>Garden Grove forecast highs cap around 76 °F — well below the tank's bulk temperature, so the spray water can always extract heat in principle. With evaporative cooling now in the model, the relevant weather term shifts: <b>relative humidity</b> matters as much as temperature, because it directly modulates how much water evaporates per second off the wetted shell. The NWS forecast through the week is mostly low-coastal-stratus (May Gray), so humidity is moderate-to-high; clearer afternoons would actually <i>help</i> the deluge. Persistent SW sea breeze keeps the downwind sector pointed ENE through Anaheim/Stanton/Buena Park — the consequence map defaults to that bearing.</p>
 
   <div class="chart-wrap">
     <h4>Garden Grove ambient air — 5-day</h4>
-    <p class="cap">Daytime highs (orange) versus overnight lows (blue). Note how the highs decline across the week — Sunday's afternoon peak is the warmest of the forecast.</p>
+    <p class="cap">Daytime highs (orange) versus overnight lows (blue). Highs trend down across the week. Combined with the moderate-RH outlook, conditions are slightly improving for the deluge each successive day.</p>
     <canvas id="chart-forecast"></canvas>
   </div>
 </section>
 
 <!-- SOURCE SNAPSHOT -->
 <section id="snapshot">
-  <h2>9 — Open-source snapshot</h2>
-  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 so the analysis is reproducible even if the original articles disappear or paywall over. Three parallel research agents gathered the news coverage, chemistry/technical references, and the local weather/environment picture.</p>
+  <h2>10 — Open-source snapshot</h2>
+  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 (and growing — the hourly cron adds new sources as they're published). Three parallel research agents gathered the news coverage, chemistry/technical references, and the local weather/environment picture; two more agents reviewed the model and the page for errors and gaps. All of those findings are themselves snapshotted.</p>
 
   <div class="grid-2">
     <div class="card">
       <h4>Snapshot stats</h4>
       <ul>
-        <li><b>News</b> — 17 articles across 12 outlets (~43 KB)</li>
-        <li><b>Reference</b> — 11 chemistry/technical files + index (~62 KB)</li>
-        <li><b>Weather/environment</b> — 8 environmental files + index (~40 KB)</li>
+        <li><b>News</b> — 17 articles across 12 outlets (auto-updating hourly)</li>
+        <li><b>Reference</b> — 14 chemistry/technical files including the model audit, content review, and gap analysis</li>
+        <li><b>Weather/environment</b> — 8 environmental files</li>
         <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>
       </ul>
     </div>
@@ -373,7 +434,7 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
         <li>Click any row in the tables below to open the snapshot on GitHub</li>
         <li>Clone the repo to read offline: <code>git clone https://github.com/KaraZajac/garden-grove-mma-analysis</code></li>
         <li>The <code>INDEX.md</code> in each subfolder is the most efficient starting point</li>
-        <li>Updated snapshots should drop into the same folders — keep the format</li>
+        <li>Updated snapshots drop into the same folders — keep the format</li>
       </ul>
     </div>
   </div>
@@ -388,9 +449,45 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
   <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-wx"></tbody></table>
 </section>
 
+<!-- REPRODUCE -->
+<section id="reproduce">
+  <h2>11 — Reproduce / extend</h2>
+  <p>Every model output on this page is regenerable. The site is plain HTML + JS + JSON; the models are Node scripts. No build step required.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Local quick start</h4>
+      <code style="font-family:var(--mono);font-size:12px;color:var(--ink);display:block;white-space:pre-line;background:var(--panel-2);padding:10px;border-radius:4px;border:1px solid var(--line)">
+git clone https://github.com/KaraZajac/garden-grove-mma-analysis
+cd garden-grove-mma-analysis
+
+# View the site
+open index.html
+# or serve: python3 -m http.server 8000
+
+# Re-run the Monte Carlo (writes assets/montecarlo-results.json)
+node scripts/montecarlo.js 10000
+
+# Re-run sensitivity sweep (writes assets/sensitivity.json)
+node scripts/sensitivity.js 1500
+
+# Both at once + auto-commit if anything changed
+bash scripts/refresh.sh 10000 1500
+      </code>
+    </div>
+    <div class="card">
+      <h4>Auto-refresh</h4>
+      <p>An hourly remote agent runs <code>scripts/refresh.sh</code> in the cloud, searches for new sources, re-runs both models, and pushes to GitHub if outputs changed (Pages auto-deploys). Watch the <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/commits/main" target="_blank" rel="noopener">commit log</a> for activity.</p>
+      <p>The cron will <i>not</i> modify the model code itself — only data (sources/), the page (when adding to the timeline), and the MC/sensitivity outputs.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <b>To extend the model:</b> the simulator and MC live in <code>assets/simulator.js</code> and <code>scripts/montecarlo.js</code>. They share the same ODE structure. Open the model audit (<code>sources/reference/model-audit-2026-05-24.md</code>) and the gap analysis (<code>sources/reference/gap-analysis-2026-05-24.md</code>) for ranked lists of what to add next.
+  </div>
+</section>
+
 <!-- CAVEATS -->
-<section id="sources">
-  <h2>10 — Caveats &amp; limitations</h2>
+<section id="caveats">
+  <h2>12 — Caveats &amp; limitations</h2>
 
   <h3>Key recon findings</h3>
   <table>
@@ -400,14 +497,15 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
 
   <h3>Caveats</h3>
   <ul>
-    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this exact aged, partially-polymerized batch. The pre-exponential <code>A</code> is phenomenologically tuned so the baseline trajectory reproduces the observed ~1 °F/hr early rise — that is a calibration, not a first-principles result.</li>
-    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank. The MC samples it as N(100, 4) °F.</li>
-    <li>The 69/31 split is the posterior <i>given</i> survival to hour 54. It is sensitive to the priors — most importantly the polymer-plating fraction <code>f_plate</code>, sampled as 0.35 ± 0.18 (range 0.02–0.75). Nobody has a measurement of f_plate for this specific tank, so the prior expresses honest uncertainty. Raising it shifts the posterior toward earlier and more failure mass; lowering it shifts back toward "deluge holds."</li>
-    <li><b>The fouling positive feedback is the dominant new physics.</b> Adding it shifted the median crossing time 16 hours earlier and moved the largest single failure window from Wednesday+ to the next 6 hours — because trajectories that barely survived to now have the least slack against this amplifier.</li>
-    <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number; chats with the field response history previously flagged the same magnitude as misleading. Treated as a separate timeline series, not an interior anchor.</li>
+    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this aged batch. <code>A</code> is phenomenologically tuned so the baseline reproduces the observed ~1 °F/hr early rise — calibration, not first-principles.</li>
+    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank. MC samples it as N(100, 4) °F.</li>
+    <li><b>The current posterior is dominated by the evaporative-cooling assumption.</b> Adding latent-heat cooling shifted holds from 66% to ~94%. The mass-transfer coefficient <code>h_m</code> (sampled log-normal, median 0.012 m/s, ~10× range) is now the single most-sensitive parameter (Δ ≈ 16% over its range). If the actual deluge produces less evaporation than the prior median — e.g., because polymer-fouled steel doesn't wet well, or because the deluge isn't covering the full shell — the holds fraction collapses back toward 60–70%.</li>
+    <li>Other uncertain priors: polymer-plating fraction <code>f_plate</code> ~ N(0.35, 0.18) clipped [0.02, 0.75]; wetted area <code>A_cool</code> ~ N(40, 8) m² clipped [25, 70]; ambient RH ~ N(0.60, 0.10) clipped [0.30, 0.85]. Each captures a measurement we don't have.</li>
+    <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number. Treated as a separate timeline series, not an interior anchor.</li>
     <li>Drone scans every 10 minutes are exterior proxies; <b>no new interior reading</b> has been publicly released since Fri ~10 pm (90 °F).</li>
-    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely conservative on timing.</li>
-    <li>The consequence model uses textbook screening formulas (Brode overpressure, point-source thermal radiation, Pasquill-Gifford dispersion with mild heavy-gas correction). Real footprints depend on terrain and congestion that these formulas do not capture.</li>
+    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely <i>optimistic</i> on timing (real tip-over could be earlier than the bulk model predicts).</li>
+    <li>The consequence model uses textbook screening formulas (Brode overpressure, point-source thermal radiation, Pasquill-Gifford dispersion). The audit flagged pool-fire burn rate (0.04 kg/m²/s) as ~2× literature for MMA (conservative), and the heavy-gas dispersion correction may underpredict near-field LEL distance (non-conservative).</li>
+    <li><b>Still-open audit findings</b> (not yet acted on): Trommsdorff onset at X=0.05 in code vs literature X≈0.20; PSV venting dynamics absent (matters for spill-vs-rupture discrimination); hot-spot stratification absent (lumped 0-D); no Bayesian particle re-weighting on new readings; no historical-analog calibration. Full list in the <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/gap-analysis-2026-05-24.md" target="_blank" rel="noopener">gap analysis</a> and <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener">audit</a>.</li>
   </ul>
 
   <div class="callout crit">
@@ -418,8 +516,10 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
 </main>
 
 <footer>
-  Generated as an open-source analytical exercise. No PII, no inside information, no operational role.
-  Method: lumped-parameter ODE thermal-runaway model with Trommsdorff gel-effect amplifier, Monte Carlo (n=300k) over uncertain parameters, conditioned on observed survival.
+  Open-source analytical exercise. No PII, no inside information, no operational role.
+  Method: lumped-parameter ODE thermal-runaway model with Arrhenius kinetics, Trommsdorff gel-effect amplifier, O₂–MEHQ cliff, PMMA wall-fouling positive feedback, evaporative cooling from the deluge, and clock-aligned diurnal solar.
+  Posterior via Approximate Bayesian Computation: 10,000 accepted trajectories conditioned on observed survival to the present.
+  Auto-refresh every hour via remote Claude routine. Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
 </footer>
 
 <!-- Chart.js via CDN -->

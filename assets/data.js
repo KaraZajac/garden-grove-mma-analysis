@@ -88,7 +88,9 @@ window.GG = {
       ["frank-kamenetskii-theory.md",     "Wikipedia",   "Frank-Kamenetskii / Semenov critical δ"],
       ["csb-rohm-haas-2010.md",           "CSB / news",  "Historical analog — 2010 Rohm & Haas MMA tank-car release"],
       ["mma-polymerization-incidents.md", "Composite",   "Other MMA / acrylic runaway incidents"],
-      ["model-audit-2026-05-24.md",       "Internal audit","Independent agent review of the simulator math/physics"],
+      ["model-audit-2026-05-24.md",       "Internal audit","Math/physics audit — found solar phase and O₂ cliff bugs"],
+      ["content-review-2026-05-24.md",    "Internal review","Page content review — stale numbers, missing sections"],
+      ["gap-analysis-2026-05-24.md",      "Internal review","Technical gap analysis — what an expert would flag as missing"],
       ["mma-sds-composite.md",            "Composite SDS","MMA safety data — composite from multiple suppliers"],
       ["epa-rmp-reference.md",            "EPA",         "Risk Management Program reference (MMA not on §112(r))"],
       ["nfpa-704-mma.md",                 "NFPA",        "NFPA 704 hazard diamond for MMA — 2/3/2"],
@@ -120,24 +122,25 @@ window.GG = {
   ],
 
   // Monte Carlo summary loaded at runtime from assets/montecarlo-results.json.
-  // Fallback summary preserved here for the no-network case.
+  // Fallback summary kept in rough sync with the latest model — full physics:
+  // PMMA fouling + O₂ cliff + clock-aligned solar + evaporative cooling.
   monteCarlo: {
     runs: 10000,
-    holdsPct: 78,
-    crossesPct: 22,
-    medianCrossingTime: "Mon 5/25 ~9 pm PDT",
-    iqr: "Sun 5/24 evening → Wed 5/27 early am",
+    holdsPct: 94,
+    crossesPct: 6,
+    medianCrossingTime: "Sun 5/24 ~8 pm PDT",
+    iqr: "Sun 5/24 5:28 am → Tue 5/26 1:42 am PDT",
     bins: [
-      {label:"Sat night → Sun 6am",       pct: 2.3},
-      {label:"Sun 6am – 12pm",            pct: 1.4},
-      {label:"Sun 12pm – 7pm",            pct: 1.7, primary:true},
-      {label:"Sun 7pm – midnight",        pct: 1.1},
-      {label:"Mon 12am – 12pm",           pct: 2.5},
-      {label:"Mon 12pm – 7pm",            pct: 1.4, secondary:true},
-      {label:"Mon evening → Tue 6am",     pct: 1.7},
-      {label:"Tue (full day)",            pct: 4.5},
-      {label:"Wed or later",              pct: 4.9},
-      {label:"Does not cross (holds)",    pct:78.5, hold:true},
+      {label:"Sat night → Sun 6am",       pct: 0.6, primary:true},
+      {label:"Sun 6am – 12pm",            pct: 0.3},
+      {label:"Sun 12pm – 7pm",            pct: 0.3},
+      {label:"Sun 7pm – midnight",        pct: 0.1},
+      {label:"Mon 12am – 12pm",           pct: 0.3},
+      {label:"Mon 12pm – 7pm",            pct: 0.2},
+      {label:"Mon evening → Tue 6am",     pct: 0.1},
+      {label:"Tue (full day)",            pct: 0.2, secondary:true},
+      {label:"Wed or later",              pct: 0.2},
+      {label:"Does not cross (holds)",    pct: 94.0, hold:true},
     ],
   },
 };

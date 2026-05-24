@@ -103,8 +103,66 @@
       set('mc-peak50',  j.peak_p50_F?.toFixed(0) + ' °F');
       set('mc-peak90',  j.peak_p90_F?.toFixed(0) + ' °F');
       set('mc-asof',    new Date(j.generated_at).toLocaleString());
+      // also hydrate BLUF
+      set('bluf-holds',     j.holds_pct.toFixed(0));
+      set('bluf-median',    j.median_crossing_label || '— (held)');
+      set('bluf-holds-2',   j.holds_pct.toFixed(1) + ' %');
+      set('bluf-median-2',  j.median_crossing_label || '— (held)');
+      set('bluf-iqr',       (j.iqr_p25_label && j.iqr_p75_label)
+                              ? `${j.iqr_p25_label} → ${j.iqr_p75_label}` : '—');
+      // Largest non-hold bin
+      const nonHold = j.bins.filter(b => !b.hold).sort((a,b) => b.pct - a.pct);
+      if (nonHold[0]){
+        set('bluf-top-bin', nonHold[0].label);
+        set('bluf-top-pct', '≈ ' + nonHold[0].pct.toFixed(1) + ' %');
+      }
+      set('page-asof', new Date(j.generated_at).toLocaleString());
     })
     .catch(()=>{});
+
+  // ---------- Chart 2b: Sensitivity tornado ----------
+  const sensCanvas = document.getElementById('chart-sens');
+  let sensChart = null;
+  if (sensCanvas){
+    sensChart = new Chart(sensCanvas, {
+      type:'bar',
+      data:{ labels:[], datasets:[{ label:'Δ crosses% (low → high)', data:[], backgroundColor:ctp.mauve, borderColor:line, borderWidth:1 }] },
+      options:{
+        indexAxis:'y', maintainAspectRatio:false,
+        scales:{
+          x:{title:{display:true, text:'Δ crosses%  (absolute)', color:muted}, grid:{color:line}, suggestedMin:0},
+          y:{grid:{color:line}}
+        },
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>{
+            const r = window.__sensRows?.[ctx.dataIndex];
+            if (!r) return ` Δ = ${ctx.parsed.x}%`;
+            return [` Δ = ${ctx.parsed.x}%`,
+                    ` low:  ${r.low_value}  →  ${r.low_crosses_pct}% crosses`,
+                    ` high: ${r.high_value}  →  ${r.high_crosses_pct}% crosses`];
+          }}}
+        }
+      }
+    });
+    fetch('assets/sensitivity.json', { cache:'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if (!j) return;
+        const rows = [...j.results].sort((a,b)=>b.delta_crosses_pct - a.delta_crosses_pct);
+        window.__sensRows = rows;
+        sensChart.data.labels = rows.map(r => r.parameter);
+        sensChart.data.datasets[0].data = rows.map(r => r.delta_crosses_pct);
+        sensChart.update();
+        // Hydrate BLUF "top sensitivity"
+        if (rows[0]){
+          const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+          set('bluf-sens-top',   rows[0].parameter);
+          set('bluf-sens-delta', 'Δ ' + rows[0].delta_crosses_pct.toFixed(1) + ' %');
+        }
+      })
+      .catch(()=>{});
+  }
 
   // ---------- Chart 3: Forecast ambient ----------
   new Chart(document.getElementById('chart-forecast'), {

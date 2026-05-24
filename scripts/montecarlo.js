@@ -41,16 +41,32 @@ function effectiveUA(UA_clean, X, p){
   return U_eff * A_c;
 }
 
+// Evaporative cooling from the deluge film (latent heat).
+function evapCooling(T_bulk_K, p){
+  if (!p.evapOn) return 0;
+  const h_m = p.h_m ?? 0.02;
+  const A_c = p.A_cool;
+  const h_fg = 2.26e6;
+  const MW = 0.018;
+  const RH = p.RH ?? 0.60;
+  const T_air_K = p.Twater;
+  const T_film  = p.Twater + 0.5 * Math.max(0, T_bulk_K - p.Twater);
+  const pSat = TK => 611 * Math.exp(17.27 * (TK - 273.15) / (TK - 273.15 + 237.3));
+  const driving = Math.max(0, pSat(T_film) - RH * pSat(T_air_K));
+  const dC = driving / (R * T_film);
+  return h_m * A_c * dC * MW * h_fg;
+}
+
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0, 1 - s.X) * Math.max(0, 1 - s.I) * gel(s.X);
-  // O2 cliff — MEHQ inert once O2 depleted; X > 0.005 triggers fast inhibitor collapse.
   const o2_collapse_rate = (s.X > 0.005) ? 5e-4 * s.I : 0;
   const dI = -p.cInh * k - o2_collapse_rate;
   // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
   const Qgen   = p.mMonomer * (p.deltaH / 0.10012) * dX;
   const UA_eff = effectiveUA(p.UA, s.X, p);
-  const Qcool  = UA_eff * (s.T - p.Twater) - solar(s.t, p.solarAmp);
+  const Q_evap = evapCooling(s.T, p);
+  const Qcool  = UA_eff * (s.T - p.Twater) + Q_evap - solar(s.t, p.solarAmp);
   const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
   return { dT, dX, dI };
 }
@@ -120,9 +136,16 @@ function sampleParams(){
     // shell vs. stays suspended. Range 0.05–0.7 is wide because nobody has
     // a measurement for THIS tank.
     fPlate:   clamp(0.35 + 0.18 * randn(), 0.02, 0.75),
-    A_cool:   clamp(40 + 8 * randn(), 25, 70),    // wetted shell area m²
+    A_cool:   clamp(40 + 8 * randn(), 25, 70),
     kPmma:    0.19,
     rhoPmma:  1180,
+    evapOn:   true,
+    // h_m is the mass-transfer coefficient — captures BOTH the physics of
+    // evaporation AND operational uncertainty (wetted-area fraction, water
+    // film integrity, polymer-fouled steel not wetting). Range spans
+    // ~10× because nobody has a measurement for THIS deluge.
+    h_m:      Math.exp(Math.log(0.012) + 0.85 * randn()),   // log-normal, median 0.012
+    RH:       clamp(0.60 + 0.10 * randn(), 0.30, 0.85),
   };
 }
 function sampleThresholdF(){
