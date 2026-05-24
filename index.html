@@ -55,7 +55,7 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      The 10k Monte Carlo — full physics (PMMA wall fouling, O₂–MEHQ cliff, clock-aligned solar, <b>evaporative cooling from the deluge</b>) — puts holds at <b><span id="bluf-holds">~94</span>%</b> through Wednesday. The latent-heat term added in the last hour roughly doubles the cooling capacity (water film evaporation ~ sensible cooling at 90 °F) and is the biggest reason the posterior shifted. The remaining failure mass clusters earliest in the next 6 hours (largest single bin) and again in the Wed+ slow-grind tail. <b>This is highly sensitive to the deluge mass-transfer coefficient</b> (h_m) — see the sensitivity section. Median crossing time <i>if</i> it fails: <span id="bluf-median">Sun evening PDT</span>.
+      The 10k Monte Carlo with full physics — including <b>evaporative cooling from the deluge</b> — and conditioned on survival to <b>Sunday 5/24 6 am PDT</b> (Anaheim official "no major changes overnight") puts holds at <b><span id="bluf-holds">~95</span>%</b>. With 8 additional hours of survival evidence (now including a water-line disruption Saturday night that the deluge recovered from), the posterior tightens further: failure mass is thin (~0.4–0.8% per day-window) and flat across the week, with no single dominant near-term window. Median crossing time <i>if</i> it fails: <span id="bluf-median">Mon late morning PDT</span>. Sensitivity is dominated by the deluge mass-transfer coefficient (h_m) and ambient humidity.
     </div>
   </div>
 
@@ -72,6 +72,8 @@
   <h2>What changed recently</h2>
   <p>Active model. Brief audit trail of substantive shifts in this session, latest first:</p>
   <ul>
+    <li><b>Survival cutoff extended to Sun 6 am PDT (hour 62).</b> Overnight cron pulled 9 new sources including an Anaheim CivicAlert ("no major changes overnight") and an ABC7 live-blog entry documenting a <b>water-line disruption Sat ~11 pm PDT</b>. The tank survived both. Survival filter now rejects more fast-fail trajectories → holds 94% → ~95%, median crossing pushed 14 h later (Sun ~8 pm → Mon ~11 am).</li>
+    <li><b>Covey's "cure at a slower rate" framing explicitly confirmed</b> (LAist) — directly validates the slow-cure interpretation: the heavy deluge is letting polymerization happen at a controlled pace rather than tipping. OCFA also confirms a <b>controlled spill is the "preferred outcome"</b> with storm-drain containment in place.</li>
     <li><b>Evaporative cooling from the deluge.</b> Gap analysis flagged the latent-heat term as missing — water film on a hot shell evaporates at 2.26 MJ/kg, roughly doubling the cooling capacity at typical conditions. Added with conservative h_m prior. Net effect: holds 66% → ~94%.</li>
     <li><b>Audit found and fixed two bugs.</b> (a) The solar phase was anchored to integration time instead of clock time — solar peak was firing at ~6:40 am the next day instead of 3 pm (≈ 9 h phase error). (b) MEHQ inhibitor was never coupled to O₂; depletion timescale was unphysically slow. Both fixed; full report at <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a>.</li>
     <li><b>PMMA wall fouling added.</b> Polymer skin on the inside of the tank wall (k = 0.19 W/m·K) is now a serial thermal resistance that grows with conversion X. At X = 2% cooling drops 50%; at X = 10% it drops 85%. This is the dominant positive feedback in the runaway dynamics — flipped the largest single failure window from "Wed or later" to the next 6 hours.</li>
@@ -228,11 +230,11 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
 <!-- MONTE CARLO -->
 <section id="monte-carlo">
   <h2>5 — Monte Carlo Failure Window</h2>
-  <p><b>10,000 accepted trajectories</b>, drawn via Approximate Bayesian Computation: sample the uncertain parameters (Ea, U·A, I₀, f_plate, A_cool, T_water, threshold T, T₀, solar amplitude) from broad priors, integrate the ODE forward from the measured 90 °F anchor at hour 30, and <i>reject any trajectory that crosses 100 °F before the present (hour 54)</i> — since the tank demonstrably survived that window. The remaining distribution is the posterior over future failure timing, conditioned on observed survival.</p>
+  <p><b>10,000 accepted trajectories</b>, drawn via Approximate Bayesian Computation: sample the uncertain parameters (Ea, U·A, I₀, f_plate, A_cool, T_water, h_m, RH, threshold T, T₀, solar amplitude) from broad priors, integrate the ODE forward from the measured 90 °F anchor at hour 30, and <i>reject any trajectory that crosses 100 °F before hour 62</i> (Sun 5/24 6 am PDT — the Anaheim official "no major changes overnight" anchor, which extends the prior survival cutoff of hour 54 by 8 hours including a documented Saturday-night water-line disruption that the system recovered from). The remaining distribution is the posterior over future failure timing, conditioned on observed survival.</p>
 
   <div class="chart-wrap">
     <h4>Where the failure mass clusters</h4>
-    <p class="cap">Green bar = the "deluge holds" branch. Red = primary failure window (largest non-hold bin). Maroon = secondary (Tuesday). Orange/grey = other windows. The shape is what matters: failure mass is bimodal — concentrated near-term (fouling tip-over) and far-term (slow grind), with a relative dip mid-week.</p>
+    <p class="cap">Green bar = the "deluge holds" branch (now ~95%). Other bars = failure-window mass, very thin and roughly flat across the week — no single dominant near-term cluster. The largest non-hold windows are Tue and Sun morning, both under 1%. With the survival cutoff at hour 62 the previously-largest "Sat night → Sun 6 am" window has been resolved (the tank survived).</p>
     <canvas id="chart-mc"></canvas>
   </div>
 
@@ -291,11 +293,15 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     </div>
   </div>
 
-  <h3>Covey's "slow cure" hypothesis</h3>
-  <p>Incident Commander Covey speculated that the heavy deluge might be letting the tank "cure at a slower rate," spreading the polymerization energy out over time. <b>The current model is closer to confirming this than refuting it.</b> Polymer-skin fouling means conversion is preferentially happening at the cold wall surface — exactly where heat is being extracted. The model's high "holds" fraction (~94% with evap cooling on) is consistent with the slow-cure end-state: a spill via PSV venting, not a detonation.</p>
+  <h3>Covey's "slow cure" hypothesis — now confirmed by OCFA</h3>
+  <p>Incident Commander Covey has now explicitly endorsed the slow-cure framing (LAist, Fri):</p>
+  <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 14px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic">
+    "One of the concepts we're thinking about is because of the heavy deluge of water and cooling it, we're allowing it to <b>cure at a slower rate and reducing its overpressure building</b>."
+  </blockquote>
+  <p>This is the operational thesis that the current model converged on independently: polymer-skin fouling means conversion is preferentially happening at the cold wall surface where heat is being extracted; evaporative cooling absorbs the released exotherm faster than it can build pressure. The model's high "holds" fraction (~95%) is consistent with the slow-cure end-state. OCFA has also confirmed that a controlled spill (not a detonation) is the "preferred outcome" — and has placed storm-drain containment to handle that branch.</p>
 
   <div class="callout">
-    <b>What this section now is:</b> a worked example of why first-pass synthesis from two clean arguments can be wrong when the system has positive-feedback dynamics. The MC's job is exactly to integrate those feedbacks honestly.
+    <b>What this section now is:</b> a worked example of why first-pass synthesis from two clean arguments can be wrong when the system has positive-feedback dynamics — and how both the calibrated model and the on-scene incident commander converged on the same revised hypothesis (slow cure, eventual controlled spill) once enough new physics was in the model and enough survival evidence was in hand.
   </div>
 </section>
 
@@ -422,7 +428,7 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     <div class="card">
       <h4>Snapshot stats</h4>
       <ul>
-        <li><b>News</b> — 17 articles across 12 outlets (auto-updating hourly)</li>
+        <li><b>News</b> — 41 articles across 15+ outlets (auto-grown by the hourly cron; includes one Anaheim CivicAlert and one California AG release)</li>
         <li><b>Reference</b> — 14 chemistry/technical files including the model audit, content review, and gap analysis</li>
         <li><b>Weather/environment</b> — 8 environmental files</li>
         <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>

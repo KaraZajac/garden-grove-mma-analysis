@@ -155,8 +155,8 @@ function sampleThresholdF(){
 
 // ---------- binning ---------------------------------------------------------
 // Hour 0 = Thu 5/21 3:40 pm PDT.  Hour 30 = Fri 9:40 pm.  Hour 54 = Sat 9:40 pm.
+// Bins start at NOW_HOUR=62 (Sun 6 am PDT).
 const bins = [
-  { id:'now-sun6am',    label:'Sat night → Sun 6am',  lo:54, hi:62  },
   { id:'sun-morn',      label:'Sun 6am – 12pm',       lo:62, hi:68  },
   { id:'sun-aft',       label:'Sun 12pm – 7pm',       lo:68, hi:75,  primary:true },
   { id:'sun-eve',       label:'Sun 7pm – midnight',   lo:75, hi:80  },
@@ -169,8 +169,8 @@ const bins = [
 
 // ---------- main ------------------------------------------------------------
 const N_TARGET   = parseInt(process.argv[2] || '10000', 10);
-const START_HOUR = 30;        // last hard-measured interior temperature anchor
-const NOW_HOUR   = 54;
+const START_HOUR = 30;        // last hard-measured interior temperature anchor (Fri 9:40 pm PDT, 90 °F)
+const NOW_HOUR   = 62;        // Sun 6 am PDT — Anaheim official: "no major changes overnight"
 const END_HOUR   = 168;       // ~Thu morning
 const t0wall     = Date.now();
 

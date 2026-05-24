@@ -114,7 +114,7 @@ function runMC(n, overrides){
     if (attempted > n * 50) break; // safety
     const p = sampleParams(overrides);
     const thr = overrides.runawayF != null ? overrides.runawayF : sampleThresholdF();
-    const out = trajectory(p, 30, 168, 54, thr);
+    const out = trajectory(p, 30, 168, 62, thr);
     if (!out.survivedToNow) continue;
     accepted++;
     if (out.crossed === null) holds++;
