@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Garden Grove MMA Tank — Thermal Runaway Analysis</title>
+<meta name="description" content="Analytical hypothesis brief, calibrated thermal-runaway simulator, and Monte Carlo failure-window estimate for the Garden Grove (CA) methyl methacrylate storage-tank incident." />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<div class="classification">UNCLASSIFIED // OPEN-SOURCE ANALYSIS // NOT OPERATIONAL GUIDANCE</div>
+
+<header class="site">
+  <h1>Garden Grove MMA Tank — Thermal Runaway Analysis</h1>
+  <div class="sub">An open-source hypothesis brief, calibrated thermal model, and Monte Carlo failure-window estimate.</div>
+  <div class="meta">
+    <span><b>Incident:</b> GKN Aerospace, Garden Grove, CA</span>
+    <span><b>Chemical:</b> Methyl methacrylate (MMA)</span>
+    <span><b>Hour 0:</b> Thu 5/21, 3:40 pm PDT</span>
+    <span><b>Last interior reading:</b> 90 °F @ t≈30 h</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#bluf">BLUF</a>
+  <a href="#chemistry">Chemistry</a>
+  <a href="#timeline">Timeline</a>
+  <a href="#model">Model</a>
+  <a href="#simulator">Simulator</a>
+  <a href="#monte-carlo">Monte Carlo</a>
+  <a href="#hypothesis">Hypothesis</a>
+  <a href="#weather">Weather</a>
+  <a href="#sources">Sources & caveats</a>
+</nav>
+
+<main>
+
+<!-- BLUF -->
+<section id="bluf">
+  <div class="bluf">
+    <div class="label">BLUF — Bottom Line Up Front</div>
+    <div class="body">
+      Conditioned on the tank having already survived ~14 hours past the linear-failure prediction, the most-likely outcome is that the intensified deluge holds (≈67%). Of the failure mass (≈33%), the dominant single window is <b>Sunday 5/24, ~3–6 pm PDT</b> — driven by the convergence of solar load, warmest spray water, and the field-reported ~100 °F "out-of-control" line.
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="box"><div class="k">Primary window</div><div class="v">Sun 3–6 pm PDT</div><div class="vsm">Solar + warm spray water</div></div>
+    <div class="box"><div class="k">Center estimate</div><div class="v">~4 pm PDT</div><div class="vsm">≈ 7 pm EDT</div></div>
+    <div class="box"><div class="k">Secondary window</div><div class="v">Mon 3–6 pm PDT</div><div class="vsm">If Sunday holds</div></div>
+    <div class="box"><div class="k">Holds (no crossing)</div><div class="v">≈ 67%</div><div class="vsm">Conditioned on survival</div></div>
+  </div>
+</section>
+
+<!-- CHEMISTRY -->
+<section id="chemistry">
+  <h2>1 — The Chemistry</h2>
+  <p>MMA is a clear, volatile liquid monomer that polymerizes into PMMA (acrylic / Plexiglas). The danger here is not a reaction with water or air — it is <b>runaway self-polymerization</b>. MMA is shipped with a small amount of inhibitor (MEHQ, ~10–100 ppm) that prevents monomer molecules from linking. The inhibitor only works in the presence of dissolved oxygen, and it is consumed over time. Once depleted, polymerization begins, releases heat, accelerates, and in a sealed tank produces a self-reinforcing exotherm.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Physical constants (MMA)</h4>
+      <table>
+        <tr><td>Boiling point</td><td class="num">101 °C / 214 °F</td></tr>
+        <tr><td>Flash point</td><td class="num">2 °C / 36 °F</td></tr>
+        <tr><td>Autoignition</td><td class="num">435 °C</td></tr>
+        <tr><td>Flammable range</td><td class="num">1.7 – 8.2 %</td></tr>
+        <tr><td>Vapor pressure (20 °C)</td><td class="num">29 mmHg</td></tr>
+        <tr><td>ΔH polymerization</td><td class="num">57.7 kJ/mol</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Why this one is hard to stop</h4>
+      <ul>
+        <li><b>Stuck off-load valve.</b> Crews cannot pump product to a safe vessel or inject fresh inhibitor — the deluge is the only control lever.</li>
+        <li><b>O₂-starved inhibitor.</b> A hot vapor-locked tank depletes dissolved O₂; MEHQ stops working even where it is present.</li>
+        <li><b>Trommsdorff gel effect.</b> As MMA polymerizes and thickens, termination slows and the reaction self-accelerates — sharper than plain Arrhenius predicts.</li>
+        <li><b>Single observable.</b> Only one risky interior reading per cycle (drone scans every 10 min are exterior proxies).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <h2>2 — Timeline (anchored)</h2>
+  <p>All times PDT. Hour 0 = Thursday 5/21 at 3:40 pm. Rows tagged
+    <span class="tag measured">measured</span>
+    <span class="tag modeled">modeled</span>
+    <span class="tag hypothesized">hypothesized</span>
+    — every temperature past the Friday-night 90 °F anchor is a projection.</p>
+
+  <div class="chart-wrap">
+    <h4>Temperature vs. time</h4>
+    <p class="cap">Green = measured interior readings. Amber = nowcast projection. Purple = forward hypothesis. Red dashed = ~100 °F field-reported "out-of-control" line.</p>
+    <canvas id="chart-timeline"></canvas>
+  </div>
+
+  <table>
+    <thead><tr><th>Hr</th><th>When</th><th>Type</th><th>Temp</th><th>Event</th><th>Risk</th></tr></thead>
+    <tbody id="timeline-body"></tbody>
+  </table>
+</section>
+
+<!-- MODEL -->
+<section id="model">
+  <h2>3 — The Model</h2>
+  <p>A lumped-parameter energy balance — the standard structure used in thermal-runaway analysis — with three coupled ODEs:</p>
+
+  <div class="card">
+    <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
+k(T)   = A · exp(−Ea / R·T)                Arrhenius rate
+dX/dt  = k · (1−X) · (1−I) · g(X)          conversion (g = Trommsdorff gel-effect amplifier)
+dI/dt  = −c · k                            inhibitor (MEHQ) depletion
+dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
+  Q_gen  = m · ΔH_p · dX/dt                heat released by polymerization
+  Q_cool = U·A · (T − T_water) − Q_solar   external cooling minus solar gain
+    </code>
+  </div>
+
+  <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with temperature while cooling only grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U·A</code>, no stable steady state exists and the temperature climbs toward the adiabatic rise that MMA's heat of polymerization dictates.</p>
+
+  <div class="callout warn">
+    <b>Threshold calibration:</b> the runaway line is set to the responders' own <b>~100 °F "out-of-control"</b> estimate, not a textbook number. Their safe-neutralization target is ~50 °F. Both are verbal field figures, not lab values — see caveats.
+  </div>
+</section>
+
+<!-- SIMULATOR -->
+<section id="simulator">
+  <h2>4 — Interactive Simulator</h2>
+  <p>Run the model forward from the current state (90 °F at t≈30 h, evolved to ~54 h baseline). Drag the cooling power (U·A) to find the knife-edge: above ~2,500 W/K and the curve flattens; below ~1,000 W/K and it tips into runaway within hours. This single parameter is exactly the lever the responders are sitting on.</p>
+
+  <div class="sim">
+    <div class="controls">
+      <div class="preset">
+        <button data-preset="baseline">Baseline</button>
+        <button data-preset="cooling-wins">Cooling wins</button>
+        <button data-preset="cooling-lost">Cooling lost</button>
+        <button data-preset="inhibitor-gone">Inhibitor gone</button>
+      </div>
+      <div>
+        <div class="row"><label>Cooling power U·A</label><span id="v-UA">2200 W/K</span></div>
+        <input id="s-UA" type="range" min="200" max="5000" step="50" value="2200" />
+      </div>
+      <div>
+        <div class="row"><label>Activation energy Ea</label><span id="v-Ea">95 kJ/mol</span></div>
+        <input id="s-Ea" type="range" min="70" max="115" step="1" value="95" />
+      </div>
+      <div>
+        <div class="row"><label>Starting interior T</label><span id="v-T0">90 °F</span></div>
+        <input id="s-T0" type="range" min="80" max="110" step="1" value="90" />
+      </div>
+      <div>
+        <div class="row"><label>Spray water T</label><span id="v-Twater">75 °F</span></div>
+        <input id="s-Twater" type="range" min="55" max="85" step="1" value="75" />
+      </div>
+      <div>
+        <div class="row"><label>Solar peak amplitude</label><span id="v-solar">250 W</span></div>
+        <input id="s-solar" type="range" min="0" max="800" step="25" value="250" />
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="stat-row">
+        <div class="stat"><div class="k">Peak T</div><div class="v" id="stat-peak">—</div></div>
+        <div class="stat"><div class="k">Cross 100 °F</div><div class="v" id="stat-cross">—</div></div>
+        <div class="stat"><div class="k">End T (+72h)</div><div class="v" id="stat-end">—</div></div>
+        <div class="stat"><div class="k">Status</div><div class="v" id="stat-status">—</div></div>
+      </div>
+      <canvas id="chart-sim-temp"></canvas>
+      <canvas id="chart-sim-heat"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- MONTE CARLO -->
+<section id="monte-carlo">
+  <h2>5 — Monte Carlo Failure Window</h2>
+  <p>300,000 simulations sweeping the uncertain parameters (Ea, U·A, inhibitor mass, threshold T), conditioned on the tank having survived to the present without crossing 100 °F. Each surviving afternoon is treated as censored evidence and pushes the posterior later.</p>
+
+  <div class="chart-wrap">
+    <h4>Where the failure mass clusters</h4>
+    <p class="cap">Green = the "deluge holds" branch (~67%). Red = the primary failure window. Orange = the secondary window. Grey = other failure timings. Night windows are nearly empty — failure is overwhelmingly an afternoon event.</p>
+    <canvas id="chart-mc"></canvas>
+  </div>
+
+  <div class="verdict">
+    <div class="box"><div class="k">Runs</div><div class="v">300,000</div></div>
+    <div class="box"><div class="k">Holds</div><div class="v">≈ 67 %</div></div>
+    <div class="box"><div class="k">Crosses</div><div class="v">≈ 33 %</div></div>
+    <div class="box"><div class="k">Median crossing</div><div class="v">Sun ~3:40 pm</div><div class="vsm">IQR: Sun midday → Mon afternoon</div></div>
+  </div>
+
+  <div class="callout">
+    <b>Read the asymmetry, not just the number.</b> The 67/33 split is sensitive to the (subjective) drift prior. What is robust is the <i>shape</i>: failure mass is clustered in afternoons, nights are nearly empty, and each surviving afternoon shifts the posterior meaningfully later.
+  </div>
+</section>
+
+<!-- HYPOTHESIS -->
+<section id="hypothesis">
+  <h2>6 — Peak-Danger Hypothesis</h2>
+  <p>Two independent derivations converge on the same window, which is what elevates this from guess to hypothesis:</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Thermodynamic (when can it tip?)</h4>
+      <p>The most adverse heat balance of each day is the afternoon — warmest spray water (~75 °F), direct solar load on the steel shell, weakest deluge effectiveness. If a runaway initiates, it initiates in the afternoon, not overnight.</p>
+    </div>
+    <div class="card">
+      <h4>Kinetic (when does it get there?)</h4>
+      <p>From 90 °F at Fri ~10 pm at ~1 °F/hr, the tank reaches the ~100 °F field threshold in the 24–48 h window — landing squarely on Sunday afternoon into Sunday night.</p>
+    </div>
+  </div>
+
+  <h3>Competing hypothesis (slow cure)</h3>
+  <p>Incident Commander Covey has floated that the heavy deluge may be letting the tank "cure at a slower rate," spreading the polymerization energy out over time. If correct, there is no single runaway moment — the reactive monomer bleeds off gradually and the failure mode is a spill, not a detonation. The fact that the tank survived Saturday afternoon's solar peak is weak but real evidence in this direction.</p>
+
+  <div class="callout warn">
+    <b>Confidence:</b> MODERATE on the timing class (afternoon). LOW–MODERATE on the specific day. NOT ASSESSED for absolute probability of failure — that is a hypothesis, not a prediction.
+  </div>
+</section>
+
+<!-- WEATHER -->
+<section id="weather">
+  <h2>7 — Weather Context</h2>
+  <p>Garden Grove forecast highs cap around 76 °F and never approach the tank's ~90 °F+ interior, so the spray water can in principle always pull heat out. The cooling capacity is the binding constraint, not water temperature. The relevant modulation is the ~18 °F day/night swing — and the slow cooling trend across the week, which gently lowers each successive afternoon peak.</p>
+
+  <div class="chart-wrap">
+    <h4>Garden Grove ambient air — 5-day</h4>
+    <p class="cap">Daytime highs (orange) versus overnight lows (blue). Note how the highs decline across the week — Sunday's afternoon peak is the warmest of the forecast.</p>
+    <canvas id="chart-forecast"></canvas>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section id="sources">
+  <h2>8 — Sources, Caveats, Limitations</h2>
+
+  <h3>Key recon findings</h3>
+  <table>
+    <thead><tr><th>Item</th><th>Value</th><th>Note</th></tr></thead>
+    <tbody id="recon-body"></tbody>
+  </table>
+
+  <h3>Caveats</h3>
+  <ul>
+    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this exact aged, partially-polymerized batch.</li>
+    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank.</li>
+    <li>The 67/33 split depends on a subjective drift prior. The asymmetry (afternoons load-bearing, nights nearly empty) is the robust finding.</li>
+    <li>Drone scans every 10 minutes are exterior proxies; interior temperature has not been publicly updated since the Fri ~10 pm 90 °F reading.</li>
+    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is conservative on timing.</li>
+  </ul>
+
+  <h3>Open-source sources</h3>
+  <ul>
+    <li>OCFA briefings and quotes — ABC7, CBS News, PBS, CNN, FOX 11, ARTVOICE, The Derrick</li>
+    <li>MMA physical constants — Wikipedia / supplier SDS (MEHQ-inhibited grades)</li>
+    <li>Garden Grove forecast — WeatherForYou</li>
+    <li>Historical analog — Rohm &amp; Haas 2010 MMA tank-car polymerization release (Louisville, KY)</li>
+  </ul>
+
+  <div class="callout crit">
+    <b>This is not operational guidance.</b> It is an open-source analytical brief. Defer to OCFA, EPA, and the responding hazmat teams for any decision affecting safety. If you are inside the evacuation zone, follow official instructions.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Generated as an open-source analytical exercise. No PII, no inside information, no operational role.
+  Method: lumped-parameter ODE thermal-runaway model with Trommsdorff gel-effect amplifier, Monte Carlo (n=300k) over uncertain parameters, conditioned on observed survival.
+</footer>
+
+<!-- Chart.js via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/simulator.js"></script>
+
+<!-- Render the timeline + recon tables before charts.js needs them -->
+<script>
+(function(){
+  const riskClass = r => {
+    const m = {Moderate:'warn',Elevated:'warn',Reduced:'ok',High:'severe',Severe:'severe',Critical:'crit'};
+    return m[r] || 'warn';
+  };
+  const tb = document.getElementById('timeline-body');
+  GG.timeline.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td class="num">${r.h}</td>`+
+      `<td>${r.when}</td>`+
+      `<td><span class="tag ${r.type}">${r.type}</span></td>`+
+      `<td class="num">${r.tempF === null ? '—' : r.tempF + ' °F'}</td>`+
+      `<td>${r.event}</td>`+
+      `<td><span class="tag ${riskClass(r.risk)}">${r.risk}</span></td>`;
+    tb.appendChild(tr);
+  });
+  const rb = document.getElementById('recon-body');
+  GG.recon.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.k}</td><td><b>${r.v}</b></td><td>${r.note}</td>`;
+    rb.appendChild(tr);
+  });
+})();
+</script>
+
+<script src="assets/charts.js"></script>
+
+</body>
+</html>
