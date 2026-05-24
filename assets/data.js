@@ -77,6 +77,9 @@ window.GG = {
       ["newsweek-evacuation-map-very-bad.md",          "Newsweek",       "Covey 'very bad chemicals' quote"],
       ["pbs-ap-40000-evacuation-orders.md",            "PBS / AP",       "AP wire via PBS NewsHour"],
       ["wikipedia-garden-grove-chemical-leak.md",      "Wikipedia",      "Garden Grove chemical leak entry"],
+      ["cbs-la-da-probe-whistleblowers.md",             "CBS LA",         "DA Spitzer criminal probe; whistleblower appeal; no redundancy"],
+      ["mynewsla-residents-remain-rising-threat.md",   "MyNewsLA",       "Saturday updated situation; Covey 'blow up is unacceptable'"],
+      ["abc7-evacuation-reissued.md",                  "ABC7 LA",        "Friday reissuance; Covey two-options; faulty valve blocks off-load"],
       ["INDEX.md",                                     "INDEX",          "All news files with summaries"],
     ],
     reference: [

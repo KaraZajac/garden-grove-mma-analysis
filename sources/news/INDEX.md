@@ -28,12 +28,15 @@ Open-source news coverage of the methyl methacrylate (MMA) storage-tank incident
 | mynewsla-40000-hazmat-saturday.md | MyNewsLA.com | 2026-05-23 | Saturday update: 40,000+ evacuated; Covey two-options quote; 1 vote center + 3 drop boxes closed; Strawberry Festival parade canceled | https://mynewsla.com/orange-county/2026/05/23/40000-garden-grove-area-residents-remain-evacuated-amid-hazmat-threat-2/ |
 | oag-price-gouging-alert.md | CA DOJ / Attorney General | 2026-05-23 | AG Bonta consumer alert; CA Penal Code §396; 10% price-increase cap on essential goods/housing during state of emergency | https://oag.ca.gov/news/press-releases/attorney-general-bonta-issues-consumer-alert-price-gouging-following-state-16 |
 | newsantaana-tank-update.md | New Santa Ana | 2026-05-23 | Valve mechanism: MMA polymerization gel glued valve shut + heat warped structure; Strawberry Stomp 5K postponed; shelter list | https://newsantaana.com/latests-updates-on-the-garden-grove-chemical-tank-emergency/ |
+| cbs-la-da-probe-whistleblowers.md | CBS Los Angeles (KCAL) | 2026-05-23 | DA Spitzer criminal probe; "not getting satisfactory answers"; whistleblower appeal; drones deployed; no redundancy criticism | https://www.cbsnews.com/losangeles/news/garden-grove-gkn-aerospace-chemical-leak-investigation-orange-county-district-attorney-whistleblowers/ |
+| mynewsla-residents-remain-rising-threat.md | MyNewsLA.com | 2026-05-23 | Updated Saturday situation: 77→90°F 1°/hr; Covey "Letting this thing just fail and blow up is unacceptable to us"; 40,000 evacuated | https://mynewsla.com/orange-county/2026/05/23/garden-grove-residents-remain-evacuated-amid-rising-hazmat-threat-3/ |
+| abc7-evacuation-reissued.md | ABC7 Los Angeles (KABC) | 2026-05-22 | Friday reissuance article: Covey two-options quote; faulty valve prevents off-load/neutralization; 40,000 evacuated, 13 campuses closed | https://abc7.com/post/tank-spews-toxic-chemicals-garden-grove-prompting-evacuation-orders/19150431/ |
 
 ## Outlets attempted but not fetched
 
 - **CNN** (https://www.cnn.com/2026/05/22/us/chemical-spill-orange-county-california) — returned HTTP 451 on both attempts
 - **NPR** (https://www.npr.org/2026/05/22/g-s1-124082/garden-grove-chemical-tank-leak) — connection closed / timeout on retry
-- **KTLA** (three URLs) — HTTP 403 Forbidden on all attempts including https://ktla.com/news/california/heres-why-experts-cant-stop-garden-grove-tank-from-overheating/ (new URL tried 2026-05-24)
+- **KTLA** (five URLs) — HTTP 403 Forbidden on all attempts: https://ktla.com/news/california/heres-why-experts-cant-stop-garden-grove-tank-from-overheating/ (tried 2026-05-24), https://ktla.com/news/orange-county/thousands-evacuated-toxic-chemicals-spew-into-air-garden-grove/ (tried 2026-05-24), https://ktla.com/news/orange-county/map-potential-blast-zones-chemical-tank-explode-garden-grove/ (tried 2026-05-24)
 - **NBC News national** — HTTP 403 Forbidden
 - **CBC Canada** — HTTP 403 Forbidden
 - **LA Times, OC Register, Reuters direct, AP direct** — no working URL surfaced in search (AP coverage captured via PBS syndication)
