@@ -133,6 +133,7 @@
     T0:        document.getElementById('s-T0'),
     Twater:    document.getElementById('s-Twater'),
     solarAmp:  document.getElementById('s-solar'),
+    fPlate:    document.getElementById('s-fplate'),
   };
   const labels = {
     UA:        document.getElementById('v-UA'),
@@ -140,6 +141,7 @@
     T0:        document.getElementById('v-T0'),
     Twater:    document.getElementById('v-Twater'),
     solarAmp:  document.getElementById('v-solar'),
+    fPlate:    document.getElementById('v-fplate'),
   };
   const stats = {
     peak:   document.getElementById('stat-peak'),
@@ -186,12 +188,14 @@
     const T0       = GG_SIM.F2K(+sliders.T0.value);
     const Twater   = GG_SIM.F2K(+sliders.Twater.value);
     const solarAmp = +sliders.solarAmp.value;
+    const fPlate   = +sliders.fPlate.value;
     labels.UA.textContent       = UA + ' W/K';
     labels.Ea.textContent       = (Ea/1000) + ' kJ/mol';
     labels.T0.textContent       = sliders.T0.value + ' °F';
     labels.Twater.textContent   = sliders.Twater.value + ' °F';
     labels.solarAmp.textContent = solarAmp + ' W';
-    return {UA, Ea, T0, Twater, solarAmp};
+    labels.fPlate.textContent   = fPlate.toFixed(2);
+    return {UA, Ea, T0, Twater, solarAmp, fPlate};
   }
 
   function run(){
@@ -235,13 +239,13 @@
     btn.addEventListener('click', ()=>{
       const preset = btn.dataset.preset;
       if (preset === 'baseline'){
-        sliders.UA.value=2200; sliders.Ea.value=95; sliders.T0.value=90; sliders.Twater.value=75; sliders.solarAmp.value=250;
+        sliders.UA.value=2200; sliders.Ea.value=95; sliders.T0.value=90; sliders.Twater.value=75; sliders.solarAmp.value=250; sliders.fPlate.value=0.30;
       } else if (preset === 'cooling-wins'){
-        sliders.UA.value=3500; sliders.Ea.value=95; sliders.T0.value=90; sliders.Twater.value=70; sliders.solarAmp.value=200;
+        sliders.UA.value=3500; sliders.Ea.value=95; sliders.T0.value=90; sliders.Twater.value=70; sliders.solarAmp.value=200; sliders.fPlate.value=0.15;
       } else if (preset === 'cooling-lost'){
-        sliders.UA.value=600;  sliders.Ea.value=95; sliders.T0.value=98; sliders.Twater.value=78; sliders.solarAmp.value=400;
+        sliders.UA.value=900;  sliders.Ea.value=95; sliders.T0.value=92; sliders.Twater.value=78; sliders.solarAmp.value=400; sliders.fPlate.value=0.45;
       } else if (preset === 'inhibitor-gone'){
-        sliders.UA.value=1500; sliders.Ea.value=85; sliders.T0.value=95; sliders.Twater.value=75; sliders.solarAmp.value=300;
+        sliders.UA.value=1500; sliders.Ea.value=85; sliders.T0.value=92; sliders.Twater.value=75; sliders.solarAmp.value=300; sliders.fPlate.value=0.30;
       }
       run();
     });

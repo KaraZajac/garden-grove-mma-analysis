@@ -12,24 +12,43 @@
   const F2K = f => (f - 32) * 5/9 + 273.15;
   const K2F = k => (k - 273.15) * 9/5 + 32;
 
-  // Defaults — chosen so the baseline reproduces ~1 °F/hr early-phase rise
-  // and tips through the ~100 °F (310.93 K) field-reported threshold under
-  // the "cooling lost" preset.
+  // Defaults — calibrated so the baseline (with polymer-skin fouling enabled)
+  // reproduces ~1 °F/hr early-phase rise and tips into runaway under the
+  // "cooling lost" preset within the observable horizon.
   const defaults = {
-    A:        5.0e10,    // 1/s         pre-exponential (calibrated to ~1°F/hr at I0=0.3, UA=2200)
-    Ea:       95000,     // J/mol       activation energy (representative MMA bulk)
+    A:        3.0e10,    // 1/s         pre-exponential
+    Ea:       95000,     // J/mol       activation energy
     deltaH:   57700,     // J/mol       heat of polymerization
-    inhibitorMol: 0.4,   // mol         total MEHQ-equivalent (small relative to monomer)
-    cInh:     2.0e-2,    // mol-MEHQ / (1/s reaction rate) consumption coupling
-    mMonomer: 23000,     // kg          ~6,500 gal × 0.94 kg/L × 3.785
-    Cp:       1900,      // J/(kg K)    MMA liquid
-    UA:       2200,      // W/K         effective cooling capacity (deluge)
+    cInh:     2.0e-2,    // inhibitor consumption coupling
+    mMonomer: 23000,     // kg
+    Cp:       1900,      // J/(kg K)
+    UA:       2200,      // W/K         CLEAN cooling capacity (no fouling)
     Twater:   297,       // K           ~75 °F
-    T0:       305.4,     // K           ~90 °F starting interior temp
-    solarAmp: 250,       // W/K-equivalent extra heat-in at daily peak (very small modulation)
-    burstF:   140,       // °F          notional shell-burst proxy
-    runawayF: 100,       // °F          field "out of control" line
+    T0:       305.4,     // K           ~90 °F
+    solarAmp: 250,
+    burstF:   140,
+    runawayF: 100,
+    // Polymer-skin fouling on the cooling-water side:
+    //   PMMA k = 0.19 W/(m·K) — a bad thermal conductor.
+    //   Layer thickness δ(X) grows linearly with conversion; a fouling
+    //   resistance R = δ/k is added in series with the clean film coefficient.
+    fPlate:   0.40,      // fraction of polymer that plates onto walls
+    A_cool:   40,        // m²    wetted shell area
+    kPmma:    0.19,      // W/(m·K) PMMA thermal conductivity
+    rhoPmma:  1180,      // kg/m³
   };
+
+  // U_eff(X) = 1 / (1/U_clean + δ(X) / k_pmma)
+  // where δ(X) = f_plate · X · m_monomer / (ρ_pmma · A_cool)
+  function effectiveUA(UA_clean, X, p){
+    if (!(p.fPlate > 0) || X < 1e-4) return UA_clean;
+    const A_c = p.A_cool;
+    const U_clean = UA_clean / A_c;
+    const delta = p.fPlate * X * p.mMonomer / (p.rhoPmma * A_c);
+    const R_foul = delta / p.kPmma;
+    const U_eff = 1 / (1/U_clean + R_foul);
+    return U_eff * A_c;
+  }
 
   // Trommsdorff gel-effect autoacceleration amplifier.
   // Slow until conversion ~0.3, then grows sharply.
@@ -54,22 +73,24 @@
     const dI = -p.cInh * k;
     // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
     const Qgen  = p.mMonomer * (p.deltaH / 0.10012) * dX;
-    const Qcool = p.UA * (T - p.Twater) - solar(state.t, p.solarAmp);
+    const UA_eff = effectiveUA(p.UA, X, p);
+    const Qcool = UA_eff * (T - p.Twater) - solar(state.t, p.solarAmp);
     const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
     return {dT, dX, dI};
   }
 
+  const clamp01 = x => Math.min(1, Math.max(0, x));
   function rk4(state, dt, p){
     const k1 = step(state, dt, p);
-    const s2 = {t:state.t+dt/2, T:state.T+k1.dT*dt/2, X:state.X+k1.dX*dt/2, I:Math.max(0,state.I+k1.dI*dt/2)};
+    const s2 = {t:state.t+dt/2, T:state.T+k1.dT*dt/2, X:clamp01(state.X+k1.dX*dt/2), I:Math.max(0,state.I+k1.dI*dt/2)};
     const k2 = step(s2, dt, p);
-    const s3 = {t:state.t+dt/2, T:state.T+k2.dT*dt/2, X:state.X+k2.dX*dt/2, I:Math.max(0,state.I+k2.dI*dt/2)};
+    const s3 = {t:state.t+dt/2, T:state.T+k2.dT*dt/2, X:clamp01(state.X+k2.dX*dt/2), I:Math.max(0,state.I+k2.dI*dt/2)};
     const k3 = step(s3, dt, p);
-    const s4 = {t:state.t+dt,   T:state.T+k3.dT*dt,   X:state.X+k3.dX*dt,   I:Math.max(0,state.I+k3.dI*dt)};
+    const s4 = {t:state.t+dt,   T:state.T+k3.dT*dt,   X:clamp01(state.X+k3.dX*dt),   I:Math.max(0,state.I+k3.dI*dt)};
     const k4 = step(s4, dt, p);
     return {
       T: state.T + (k1.dT + 2*k2.dT + 2*k3.dT + k4.dT) * dt / 6,
-      X: state.X + (k1.dX + 2*k2.dX + 2*k3.dX + k4.dX) * dt / 6,
+      X: clamp01(state.X + (k1.dX + 2*k2.dX + 2*k3.dX + k4.dX) * dt / 6),
       I: Math.max(0, state.I + (k1.dI + 2*k2.dI + 2*k3.dI + k4.dI) * dt / 6),
     };
   }
@@ -91,7 +112,7 @@
         const k = p.A * Math.exp(-p.Ea / (R * state.T));
         const dX = k * Math.max(0,1-state.X) * Math.max(0,1-state.I) * gel(state.X);
         const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
-        const Qcool = p.UA * (state.T - p.Twater);
+        const Qcool = effectiveUA(p.UA, state.X, p) * (state.T - p.Twater);
         out.t.push(state.t);
         out.TF.push(K2F(state.T));
         out.Qgen.push(Qgen);

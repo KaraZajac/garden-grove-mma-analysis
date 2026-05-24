@@ -45,15 +45,15 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      The 10k Monte Carlo, conditioned on the tank surviving to now without crossing 100 °F, puts the most-likely outcome at <b>≈78% holds through Wednesday</b>. The remaining <b>~22% failure mass</b> is spread across the week, dominated by Tuesday (~4.5%) and Wed+ (~4.9%), with each day's failure mass concentrated in the afternoon solar peak. The original Sunday-afternoon hypothesis is the soonest credible window but no longer the most-likely; the survival history has pushed the posterior later.
+      The 10k Monte Carlo, conditioned on the tank surviving to now without crossing 100 °F and now including <b>PMMA wall-fouling positive feedback</b>, puts the most-likely outcome at <b>≈69% holds</b> through midweek. The remaining <b>~31% failure mass</b> is most concentrated in <b>Sat night → Sun 6 am (5.9%)</b> — the near-term window with the least slack against the fouling amplifier — followed by Wednesday+ (5.1%) and Tuesday (4.3%). Median crossing time, if it fails, is Mon ~5 am PDT.
     </div>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Holds through Wed</div><div class="v">≈ 78 %</div><div class="vsm">Posterior, conditioned on survival</div></div>
-    <div class="box"><div class="k">Median crossing (if it fails)</div><div class="v">Mon ~9 pm PDT</div><div class="vsm">IQR: Sun eve → Wed early am</div></div>
-    <div class="box"><div class="k">Soonest credible window</div><div class="v">Sun 12–7 pm PDT</div><div class="vsm">~1.7% — first solar peak</div></div>
-    <div class="box"><div class="k">Largest single window</div><div class="v">Wed or later</div><div class="vsm">~4.9% — slow grind</div></div>
+    <div class="box"><div class="k">Holds</div><div class="v">≈ 69 %</div><div class="vsm">Posterior with PMMA fouling enabled</div></div>
+    <div class="box"><div class="k">Median crossing</div><div class="v">Mon ~5 am PDT</div><div class="vsm">IQR: Sun am → Tue afternoon</div></div>
+    <div class="box"><div class="k">Largest single window</div><div class="v">Sat night → Sun 6 am</div><div class="vsm">≈ 5.9% — near-term fouling tip-over</div></div>
+    <div class="box"><div class="k">Secondary cluster</div><div class="v">Wed or later</div><div class="vsm">≈ 5.1% — slow-grind path</div></div>
   </div>
 </section>
 
@@ -80,6 +80,7 @@
         <li><b>Stuck off-load valve.</b> Crews cannot pump product to a safe vessel or inject fresh inhibitor — the deluge is the only control lever.</li>
         <li><b>O₂-starved inhibitor.</b> A hot vapor-locked tank depletes dissolved O₂; MEHQ stops working even where it is present.</li>
         <li><b>Trommsdorff gel effect.</b> As MMA polymerizes and thickens, termination slows and the reaction self-accelerates — sharper than plain Arrhenius predicts.</li>
+        <li><b>Polymer-skin fouling.</b> PMMA solidifies preferentially on cool surfaces — the inside of the tank wall where the deluge is hitting. PMMA's thermal conductivity is ~0.19 W/(m·K), almost 300× worse than steel. Even a 1 cm polymer skin doubles the wall's thermal resistance; 2 cm triples it. This is a brutal positive feedback: the chemistry that produces heat also produces the insulation that traps it.</li>
         <li><b>Single observable.</b> Only one risky interior reading per cycle (drone scans every 10 min are exterior proxies).</li>
       </ul>
     </div>
@@ -114,14 +115,19 @@
 
   <div class="card">
     <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
-k(T)   = A · exp(−Ea / R·T)                Arrhenius rate
-dX/dt  = k · (1−X) · (1−I) · g(X)          conversion (g = Trommsdorff gel-effect amplifier)
-dI/dt  = −c · k                            inhibitor (MEHQ) depletion
-dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
-  Q_gen  = m · ΔH_p · dX/dt                heat released by polymerization
-  Q_cool = U·A · (T − T_water) − Q_solar   external cooling minus solar gain
+k(T)        = A · exp(−Ea / R·T)                     Arrhenius rate
+dX/dt       = k · (1−X) · (1−I) · g(X)               conversion (g = Trommsdorff gel-effect amplifier)
+dI/dt       = −c · k                                 inhibitor (MEHQ) depletion
+δ(X)        = f_plate · X · m / (ρ_PMMA · A_cool)    polymer-skin layer thickness
+R_foul(X)   = δ(X) / k_PMMA                          PMMA thermal resistance
+U_eff(X)    = 1 / (1/U_clean + R_foul(X))            fouled heat-transfer coefficient
+dT/dt       = (Q_gen − Q_cool) / (m · Cp)            energy balance
+  Q_gen     = m · ΔH_p · dX/dt                       heat released by polymerization
+  Q_cool    = U_eff(X)·A · (T − T_water) − Q_solar   fouled external cooling minus solar gain
     </code>
   </div>
+
+  <p><b>The fouling term is the dominant amplifier.</b> PMMA at k = 0.19 W/(m·K) is roughly 300× more insulating than steel — even a few millimeters of polymer skin on the wall meaningfully degrades the deluge's ability to pull heat out of the bulk. At X = 2% the effective cooling drops ~50%; at X = 10% it drops 85%. This is a positive feedback: every degree of warming makes some polymer, which forms insulation, which traps the next degree.</p>
 
   <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with temperature while cooling only grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U·A</code>, no stable steady state exists and the temperature climbs toward the adiabatic rise that MMA's heat of polymerization dictates.</p>
 
@@ -133,7 +139,7 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
 <!-- SIMULATOR -->
 <section id="simulator">
   <h2>4 — Interactive Simulator</h2>
-  <p>Run the model forward from the current state (90 °F at t≈30 h, evolved to ~54 h baseline). Drag the cooling power (U·A) to find the knife-edge: above ~2,500 W/K and the curve flattens; below ~1,000 W/K and it tips into runaway within hours. This single parameter is exactly the lever the responders are sitting on.</p>
+  <p>Run the model forward from the current state (90 °F at t≈30 h, evolved to ~54 h baseline). Drag the cooling power (U·A) to find the knife-edge: above ~2,500 W/K and the curve flattens; below ~1,000 W/K and it tips into runaway within hours. Then try the <b>polymer fouling slider</b> — set it from 0.05 (almost no plating) up to 0.5 and watch how dramatically the same U·A loses effectiveness as conversion grows.</p>
 
   <div class="sim">
     <div class="controls">
@@ -162,6 +168,11 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
       <div>
         <div class="row"><label>Solar peak amplitude</label><span id="v-solar">250 W</span></div>
         <input id="s-solar" type="range" min="0" max="800" step="25" value="250" />
+      </div>
+      <div>
+        <div class="row"><label>Polymer fouling f_plate</label><span id="v-fplate">0.30</span></div>
+        <input id="s-fplate" type="range" min="0" max="0.7" step="0.025" value="0.30" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Fraction of new polymer that adheres to cool walls (PMMA k = 0.19 W/m·K)</div>
       </div>
     </div>
 
@@ -197,7 +208,7 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
   </div>
 
   <div class="callout">
-    <b>The big shift from the first-pass estimate.</b> The earlier brief named Sunday afternoon as the dominant window with 13% probability. The properly-conditioned 10k MC redistributes that mass: surviving past hour 54 prunes the fastest-failure trajectories, so the failure mass shifts later in the week. Peak-temperature distribution is bimodal — P50 ≈ <span id="mc-peak50">—</span> (essentially holding) but P90 ≈ <span id="mc-peak90">—</span> (full thermal runaway in the worst 10%). The actionable shape is still afternoon-clustered within each day; what changed is which day.
+    <b>What changes when you add PMMA wall fouling.</b> Holds drop from ~78% to ~69% and crossings tighten earlier — median 16 h sooner (Mon ~5 am vs Mon ~9 pm). The biggest single window is no longer "Wed or later" (slow grind) but <b>Sat night → Sun 6 am</b> (~5.9%) — trajectories that barely survived to now have minimal margin against the positive-feedback amplifier. Peak-temperature distribution is bimodal: P50 ≈ <span id="mc-peak50">—</span> (essentially holding) but P90 ≈ <span id="mc-peak90">—</span> (full thermal runaway in the worst 10%).
   </div>
 
   <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Results generated: <span id="mc-asof">—</span> · run with <code>node scripts/montecarlo.js 10000</code></p>
@@ -391,7 +402,8 @@ dT/dt  = (Q_gen − Q_cool) / (m · Cp)       energy balance
   <ul>
     <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this exact aged, partially-polymerized batch. The pre-exponential <code>A</code> is phenomenologically tuned so the baseline trajectory reproduces the observed ~1 °F/hr early rise — that is a calibration, not a first-principles result.</li>
     <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank. The MC samples it as N(100, 4) °F.</li>
-    <li>The 78/22 split is the posterior <i>given</i> survival to hour 54. It is sensitive to the priors (especially the cooling-effectiveness log-normal). What is robust is the <i>shape</i> — afternoons load-bearing, nights nearly empty.</li>
+    <li>The 69/31 split is the posterior <i>given</i> survival to hour 54. It is sensitive to the priors — most importantly the polymer-plating fraction <code>f_plate</code>, sampled as 0.35 ± 0.18 (range 0.02–0.75). Nobody has a measurement of f_plate for this specific tank, so the prior expresses honest uncertainty. Raising it shifts the posterior toward earlier and more failure mass; lowering it shifts back toward "deluge holds."</li>
+    <li><b>The fouling positive feedback is the dominant new physics.</b> Adding it shifted the median crossing time 16 hours earlier and moved the largest single failure window from Wednesday+ to the next 6 hours — because trajectories that barely survived to now have the least slack against this amplifier.</li>
     <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number; chats with the field response history previously flagged the same magnitude as misleading. Treated as a separate timeline series, not an interior anchor.</li>
     <li>Drone scans every 10 minutes are exterior proxies; <b>no new interior reading</b> has been publicly released since Fri ~10 pm (90 °F).</li>
     <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely conservative on timing.</li>

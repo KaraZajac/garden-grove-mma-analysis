@@ -28,48 +28,60 @@ function solar(tHours, amp){
   return Math.max(0, phase) * amp;
 }
 
+// Polymer-skin fouling — see simulator.js for derivation.
+function effectiveUA(UA_clean, X, p){
+  if (!(p.fPlate > 0) || X < 1e-4) return UA_clean;
+  const A_c = p.A_cool;
+  const U_clean = UA_clean / A_c;
+  const delta = p.fPlate * X * p.mMonomer / (p.rhoPmma * A_c);
+  const R_foul = delta / p.kPmma;
+  const U_eff = 1 / (1/U_clean + R_foul);
+  return U_eff * A_c;
+}
+
 function step(s, p){
   const k = p.A * Math.exp(-p.Ea / (R * s.T));
   const dX = k * Math.max(0, 1 - s.X) * Math.max(0, 1 - s.I) * gel(s.X);
   const dI = -p.cInh * k;
-  // Phenomenological lumped energy balance — calibrated to reproduce the
-  // observed ~1 °F/hr early rise, not a first-principles calc.
   // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
-  const Qgen  = p.mMonomer * (p.deltaH / 0.10012) * dX;
-  const Qcool = p.UA * (s.T - p.Twater) - solar(s.t, p.solarAmp);
+  const Qgen   = p.mMonomer * (p.deltaH / 0.10012) * dX;
+  const UA_eff = effectiveUA(p.UA, s.X, p);
+  const Qcool  = UA_eff * (s.T - p.Twater) - solar(s.t, p.solarAmp);
   const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
   return { dT, dX, dI };
 }
+const clamp01 = x => Math.min(1, Math.max(0, x));
 function rk4(s, dt, p){
   const k1 = step(s, p);
-  const s2 = { t:s.t+dt/2, T:s.T+k1.dT*dt/2, X:s.X+k1.dX*dt/2, I:Math.max(0,s.I+k1.dI*dt/2) };
+  const s2 = { t:s.t+dt/2, T:s.T+k1.dT*dt/2, X:clamp01(s.X+k1.dX*dt/2), I:Math.max(0,s.I+k1.dI*dt/2) };
   const k2 = step(s2, p);
-  const s3 = { t:s.t+dt/2, T:s.T+k2.dT*dt/2, X:s.X+k2.dX*dt/2, I:Math.max(0,s.I+k2.dI*dt/2) };
+  const s3 = { t:s.t+dt/2, T:s.T+k2.dT*dt/2, X:clamp01(s.X+k2.dX*dt/2), I:Math.max(0,s.I+k2.dI*dt/2) };
   const k3 = step(s3, p);
-  const s4 = { t:s.t+dt,   T:s.T+k3.dT*dt,   X:s.X+k3.dX*dt,   I:Math.max(0,s.I+k3.dI*dt) };
+  const s4 = { t:s.t+dt,   T:s.T+k3.dT*dt,   X:clamp01(s.X+k3.dX*dt),   I:Math.max(0,s.I+k3.dI*dt) };
   const k4 = step(s4, p);
   return {
     T: s.T + (k1.dT + 2*k2.dT + 2*k3.dT + k4.dT) * dt/6,
-    X: s.X + (k1.dX + 2*k2.dX + 2*k3.dX + k4.dX) * dt/6,
+    X: clamp01(s.X + (k1.dX + 2*k2.dX + 2*k3.dX + k4.dX) * dt/6),
     I: Math.max(0, s.I + (k1.dI + 2*k2.dI + 2*k3.dI + k4.dI) * dt/6),
   };
 }
 
 // Integrate from anchor.  Returns { crossed, peakF, survivedToNow }.
+// Adaptive dt: 60 s at low T, 5 s once temperature crosses the steep regime.
 function trajectory(p, startHour, endHour, surviveByHour, runawayF){
-  const dt = 60;
   let s = { t: startHour, T: p.T0, X: 0.02, I: p.I0 ?? 0.3 };
   let crossed = null;
   let peakF = K2F(s.T);
-  const steps = Math.round((endHour - startHour) * 3600 / dt);
-  for (let i = 0; i < steps; i++){
+  let t = startHour;
+  while (t < endHour){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
-    if (crossed === null && TF >= runawayF) crossed = s.t;
+    if (crossed === null && TF >= runawayF) crossed = t;
     if (TF > 250) break;
+    const dt = TF > 95 ? 5 : 60;
     const next = rk4(s, dt, p);
-    s.t += dt/3600;
-    s.T = next.T; s.X = next.X; s.I = next.I;
+    t += dt/3600;
+    s.t = t; s.T = next.T; s.X = next.X; s.I = next.I;
   }
   const survivedToNow = !(crossed !== null && crossed < surviveByHour);
   return { crossed, peakF, survivedToNow };
@@ -88,21 +100,25 @@ function clamp(x, lo, hi){ return Math.min(hi, Math.max(lo, x)); }
 // uncertainty lives in (UA, Ea, I0, threshold).
 function sampleParams(){
   return {
-    A:        5.0e10,
+    A:        3.0e10,
     Ea:       clamp(94000 + 5000 * randn(),  78000, 110000),
     deltaH:   57700,
     cInh:     2.0e-2,
     mMonomer: 23000,
     Cp:       1900,
-    // Inhibitor: this tank is reacting *because* MEHQ is depleted.
-    // Sample favors low inhibitor levels but with a heavy tail toward
-    // "still some left" (interpreted as residual stabilizer).
     I0:       clamp(0.10 + 0.25 * Math.abs(randn()), 0.0, 0.95),
-    // Cooling: wide log-normal, centered on the in-browser baseline.
     UA:       Math.exp(Math.log(2000) + 0.45 * randn()),
     Twater:   F2K(75 + 4 * randn()),
-    T0:       F2K(90 + 1.5 * randn()),       // anchor at 90 °F ± 1.5
+    T0:       F2K(90 + 1.5 * randn()),
     solarAmp: clamp(250 + 120 * randn(), 0, 800),
+    // PMMA wall fouling — this is the new dominant amplifier.
+    // f_plate: fraction of newly-formed polymer that adheres to the cool
+    // shell vs. stays suspended. Range 0.05–0.7 is wide because nobody has
+    // a measurement for THIS tank.
+    fPlate:   clamp(0.35 + 0.18 * randn(), 0.02, 0.75),
+    A_cool:   clamp(40 + 8 * randn(), 25, 70),    // wetted shell area m²
+    kPmma:    0.19,
+    rhoPmma:  1180,
   };
 }
 function sampleThresholdF(){
