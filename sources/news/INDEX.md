@@ -22,11 +22,18 @@ Open-source news coverage of the methyl methacrylate (MMA) storage-tank incident
 | loscerritos-blast-zone-map.md | Los Cerritos Community News | 2026-05-23 | OCFA blast-zone map detail: Wakeham Elementary in moderate damage zone; streets named in severe zone | https://www.loscerritosnews.net/2026/05/23/garden-grove-blast-zone-map-shows-homes-school-near-gkn-aerospace-chemical-threat/ |
 | wikipedia-garden-grove-chemical-leak.md | Wikipedia | 2026-05-24 | Encyclopedic synthesis: 34,000-gal tank/7,000 gal MMA; GKN at site since 1993, 15.5 acres; prior 2018 and 2021 violations | https://en.wikipedia.org/wiki/Garden_Grove_chemical_leak |
 
+| nbc-la-temperature-increasing.md | NBC Los Angeles (KNBC) | 2026-05-23 | 77→90°F; 1°F/hr; Covey: "not giving up"; bulge in pressure-relief valve | https://www.nbclosangeles.com/news/local/garden-grove-gas-leak-temperature/3894210/ |
+| ocde-school-closures.md | OCDE Newsroom (official) | 2026-05-23 | 8 elementary + 2 intermediate + 2 high schools closed; "initial progress toward product removal" but valve damage complicates resolution | https://newsroom.ocde.us/several-garden-grove-unified-campuses-closed-following-chemical-leak-response/ |
+| loscerritos-gkn-background.md | Los Cerritos Community News | 2026-05-23 | GKN Aerospace profile: UK-based, 32 sites/12 countries, 16,000 employees; 2018 CA DIR penalty; Garden Grove makes aircraft canopies | https://www.loscerritosnews.net/2026/05/23/little-known-aerospace-giant-gkn-at-center-of-massive-orange-county-hazmat-crisis-in-garden-grove/ |
+| mynewsla-40000-hazmat-saturday.md | MyNewsLA.com | 2026-05-23 | Saturday update: 40,000+ evacuated; Covey two-options quote; 1 vote center + 3 drop boxes closed; Strawberry Festival parade canceled | https://mynewsla.com/orange-county/2026/05/23/40000-garden-grove-area-residents-remain-evacuated-amid-hazmat-threat-2/ |
+| oag-price-gouging-alert.md | CA DOJ / Attorney General | 2026-05-23 | AG Bonta consumer alert; CA Penal Code §396; 10% price-increase cap on essential goods/housing during state of emergency | https://oag.ca.gov/news/press-releases/attorney-general-bonta-issues-consumer-alert-price-gouging-following-state-16 |
+| newsantaana-tank-update.md | New Santa Ana | 2026-05-23 | Valve mechanism: MMA polymerization gel glued valve shut + heat warped structure; Strawberry Stomp 5K postponed; shelter list | https://newsantaana.com/latests-updates-on-the-garden-grove-chemical-tank-emergency/ |
+
 ## Outlets attempted but not fetched
 
 - **CNN** (https://www.cnn.com/2026/05/22/us/chemical-spill-orange-county-california) — returned HTTP 451 on both attempts
 - **NPR** (https://www.npr.org/2026/05/22/g-s1-124082/garden-grove-chemical-tank-leak) — connection closed / timeout on retry
-- **KTLA** (two URLs) — HTTP 403 Forbidden
+- **KTLA** (three URLs) — HTTP 403 Forbidden on all attempts including https://ktla.com/news/california/heres-why-experts-cant-stop-garden-grove-tank-from-overheating/ (new URL tried 2026-05-24)
 - **NBC News national** — HTTP 403 Forbidden
 - **CBC Canada** — HTTP 403 Forbidden
 - **LA Times, OC Register, Reuters direct, AP direct** — no working URL surfaced in search (AP coverage captured via PBS syndication)
