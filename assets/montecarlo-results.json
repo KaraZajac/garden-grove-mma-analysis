@@ -1,81 +1,81 @@
 {
-  "generated_at": "2026-05-24T06:53:38.643Z",
+  "generated_at": "2026-05-24T07:16:21.175Z",
   "n_target": 10000,
   "n_accepted": 10000,
-  "n_attempted": 23093,
-  "acceptance_rate": 43.3,
+  "n_attempted": 22931,
+  "acceptance_rate": 43.61,
   "anchor": "T = 90 °F at hour 30 (Fri 5/22 ~9:40 pm PDT interior gauge)",
   "survival_cutoff_hour": 54,
   "end_hour": 168,
-  "duration_sec": 54.5,
-  "holds_pct": 94.36,
-  "crosses_pct": 5.64,
-  "median_crossing_hour": 76.47361111109352,
-  "median_crossing_label": "Sun 5/24 8:08 pm PDT",
-  "iqr_p25_hour": 61.81388888889022,
-  "iqr_p25_label": "Sun 5/24 5:28 am PDT",
-  "iqr_p75_hour": 106.03333333332901,
-  "iqr_p75_label": "Tue 5/26 1:42 am PDT",
-  "peak_p50_F": 90.09035627500083,
-  "peak_p90_F": 92.46816485427424,
+  "duration_sec": 57.3,
+  "holds_pct": 94.47,
+  "crosses_pct": 5.53,
+  "median_crossing_hour": 78.48333333332504,
+  "median_crossing_label": "Sun 5/24 10:09 pm PDT",
+  "iqr_p25_hour": 61.784722222221255,
+  "iqr_p25_label": "Sun 5/24 5:27 am PDT",
+  "iqr_p75_hour": 114.17638888886822,
+  "iqr_p75_label": "Tue 5/26 9:50 am PDT",
+  "peak_p50_F": 90.09863431622891,
+  "peak_p90_F": 92.51467047917204,
   "bins": [
     {
       "label": "Sat night → Sun 6am",
-      "pct": 1.43,
+      "pct": 1.4,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Sun 6am – 12pm",
-      "pct": 0.75,
+      "pct": 0.59,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Sun 12pm – 7pm",
-      "pct": 0.48,
+      "pct": 0.53,
       "primary": true,
       "secondary": false
     },
     {
       "label": "Sun 7pm – midnight",
-      "pct": 0.42,
+      "pct": 0.34,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Mon 12am – 12pm",
-      "pct": 0.64,
+      "pct": 0.49,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Mon 12pm – 7pm",
-      "pct": 0.27,
+      "pct": 0.32,
       "primary": false,
       "secondary": true
     },
     {
       "label": "Mon evening → Tue 6am",
-      "pct": 0.39,
+      "pct": 0.41,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Tue (full day)",
-      "pct": 0.6,
-      "primary": false,
-      "secondary": false
-    },
-    {
-      "label": "Wed or later",
       "pct": 0.66,
       "primary": false,
       "secondary": false
     },
     {
+      "label": "Wed or later",
+      "pct": 0.79,
+      "primary": false,
+      "secondary": false
+    },
+    {
       "label": "Does not cross (holds)",
-      "pct": 94.36,
+      "pct": 94.47,
       "hold": true
     }
   ]
