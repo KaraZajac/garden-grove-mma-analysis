@@ -1,104 +1,104 @@
 {
-  "generated_at": "2026-05-24T09:19:11.351Z",
+  "generated_at": "2026-05-24T10:19:28.190Z",
   "n_per_variant": 1500,
-  "duration_sec": 177.7,
+  "duration_sec": 214.6,
   "baseline": {
     "accepted": 1500,
-    "attempted": 3503,
-    "holdsPct": 95.13,
-    "crossesPct": 4.87,
-    "medianHr": 70.7
+    "attempted": 3414,
+    "holdsPct": 95,
+    "crossesPct": 5,
+    "medianHr": 80.7
   },
   "results": [
     {
       "parameter": "h_m (evap mass-transfer)",
       "low_value": "{\"h_m\":0.004}",
       "high_value": "{\"h_m\":0.035}",
-      "low_crosses_pct": 17.2,
-      "high_crosses_pct": 0.4,
-      "low_median_hr": 85.4,
-      "high_median_hr": 66.2,
-      "delta_crosses_pct": 16.8
+      "low_crosses_pct": 16.4,
+      "high_crosses_pct": 1,
+      "low_median_hr": 88.9,
+      "high_median_hr": 60.5,
+      "delta_crosses_pct": 15.4
     },
     {
       "parameter": "RH (ambient humidity)",
       "low_value": "{\"RH\":0.35}",
       "high_value": "{\"RH\":0.8}",
-      "low_crosses_pct": 2.4,
-      "high_crosses_pct": 12,
-      "low_median_hr": 68.7,
-      "high_median_hr": 90,
-      "delta_crosses_pct": 9.6
-    },
-    {
-      "parameter": "UA (cooling effectiveness)",
-      "low_value": "{\"UA\":1000}",
-      "high_value": "{\"UA\":3500}",
-      "low_crosses_pct": 4.13,
-      "high_crosses_pct": 7.53,
-      "low_median_hr": 76.4,
-      "high_median_hr": 75.6,
-      "delta_crosses_pct": 3.4
+      "low_crosses_pct": 1.13,
+      "high_crosses_pct": 12.73,
+      "low_median_hr": 60.7,
+      "high_median_hr": 81,
+      "delta_crosses_pct": 11.6
     },
     {
       "parameter": "Twater (spray water)",
       "low_value": "{\"Twater\":293.15}",
       "high_value": "{\"Twater\":299.81666666666666}",
-      "low_crosses_pct": 4.07,
-      "high_crosses_pct": 7.33,
-      "low_median_hr": 76.5,
-      "high_median_hr": 75.2,
-      "delta_crosses_pct": 3.26
-    },
-    {
-      "parameter": "A_cool (wetted area)",
-      "low_value": "{\"A_cool\":30}",
-      "high_value": "{\"A_cool\":55}",
-      "low_crosses_pct": 7.2,
-      "high_crosses_pct": 4.87,
-      "low_median_hr": 72.9,
-      "high_median_hr": 82.9,
-      "delta_crosses_pct": 2.33
+      "low_crosses_pct": 2.87,
+      "high_crosses_pct": 7.2,
+      "low_median_hr": 83.3,
+      "high_median_hr": 69.9,
+      "delta_crosses_pct": 4.33
     },
     {
       "parameter": "fPlate (polymer fouling)",
       "low_value": "{\"fPlate\":0.1}",
       "high_value": "{\"fPlate\":0.6}",
-      "low_crosses_pct": 7.13,
-      "high_crosses_pct": 4.93,
-      "low_median_hr": 82.3,
-      "high_median_hr": 77.3,
-      "delta_crosses_pct": 2.2
-    },
-    {
-      "parameter": "threshold T (runawayF)",
-      "low_value": "{\"runawayF\":95}",
-      "high_value": "{\"runawayF\":108}",
-      "low_crosses_pct": 5.4,
-      "high_crosses_pct": 7.47,
-      "low_median_hr": 77.6,
-      "high_median_hr": 78.2,
-      "delta_crosses_pct": 2.07
+      "low_crosses_pct": 7.2,
+      "high_crosses_pct": 4.4,
+      "low_median_hr": 91.6,
+      "high_median_hr": 67,
+      "delta_crosses_pct": 2.8
     },
     {
       "parameter": "T0 (anchor temp)",
       "low_value": "{\"T0\":304.26111111111106}",
       "high_value": "{\"T0\":306.4833333333333}",
-      "low_crosses_pct": 6.87,
-      "high_crosses_pct": 5.13,
-      "low_median_hr": 75.4,
-      "high_median_hr": 72.5,
-      "delta_crosses_pct": 1.74
+      "low_crosses_pct": 6.53,
+      "high_crosses_pct": 4.07,
+      "low_median_hr": 74.6,
+      "high_median_hr": 77.5,
+      "delta_crosses_pct": 2.46
+    },
+    {
+      "parameter": "threshold T (runawayF)",
+      "low_value": "{\"runawayF\":95}",
+      "high_value": "{\"runawayF\":108}",
+      "low_crosses_pct": 5.2,
+      "high_crosses_pct": 6.87,
+      "low_median_hr": 73.2,
+      "high_median_hr": 80.8,
+      "delta_crosses_pct": 1.67
+    },
+    {
+      "parameter": "UA (cooling effectiveness)",
+      "low_value": "{\"UA\":1000}",
+      "high_value": "{\"UA\":3500}",
+      "low_crosses_pct": 5.2,
+      "high_crosses_pct": 6.67,
+      "low_median_hr": 75.1,
+      "high_median_hr": 85.1,
+      "delta_crosses_pct": 1.47
     },
     {
       "parameter": "I0 (initial inhibitor)",
       "low_value": "{\"I0\":0.05}",
       "high_value": "{\"I0\":0.6}",
-      "low_crosses_pct": 5.27,
-      "high_crosses_pct": 6.53,
-      "low_median_hr": 80.2,
+      "low_crosses_pct": 5.33,
+      "high_crosses_pct": 6.67,
+      "low_median_hr": 82.8,
+      "high_median_hr": 74.1,
+      "delta_crosses_pct": 1.34
+    },
+    {
+      "parameter": "A_cool (wetted area)",
+      "low_value": "{\"A_cool\":30}",
+      "high_value": "{\"A_cool\":55}",
+      "low_crosses_pct": 6.13,
+      "high_crosses_pct": 4.93,
+      "low_median_hr": 76.5,
       "high_median_hr": 76.5,
-      "delta_crosses_pct": 1.26
+      "delta_crosses_pct": 1.2
     },
     {
       "parameter": "Ea (activation energy)",
