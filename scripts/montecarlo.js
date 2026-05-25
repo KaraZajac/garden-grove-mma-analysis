@@ -182,14 +182,61 @@ function irCooling(T_K, p, tHours){
   return eps * sigma * A_ext * (Math.pow(T_shell, 4) - Math.pow(Tsky, 4));
 }
 
+// =============================================================================
+// v5 chemistry constants (per kinetics-implementation spec)
+// =============================================================================
+const M0_MOL_L = 9.4;                // MMA initial concentration mol/L
+const C_TH = 0.085;                  // (L/mol·s)^0.5  Polymer Handbook kp/√kt
+const ALPHA_STRAT = 1.5;             // dynamic stratification growth coefficient
+const DT_STRAT_MAX_F = 60;
+const RHO_HH = 0.01;                 // PMMA head-to-head linkage fraction
+const PHI_SKIN = 0.02;               // skin volumetric weighting
+
 function step(s, p){
-  const k = p.A * Math.exp(-p.Ea / (R * s.T));
-  // Binary inhibition with smooth transition
+  // v5 dynamic stratification — grows with X; capped
+  const dTstratF_eff = Math.min(DT_STRAT_MAX_F,
+    (p.dTstratF_base || 15) * (1 + ALPHA_STRAT * s.X));
+  const dTstrat_K = dTstratF_eff * 5/9;
+  // Reaction happens at the hotter top-layer, not bulk
+  const T_rxn = s.T + dTstrat_K;
+  p.__dTstratF_eff = dTstratF_eff;     // expose for trajectory threshold check
+
+  // Inhibited propagation channel (MEHQ-controlled)
+  const k = p.A * Math.exp(-p.Ea / (R * T_rxn));
   const inhibFactor = 1 / (1 + Math.exp(-(I_CRIT - s.I)/0.005));
-  const dX = k * Math.max(0, 1 - s.X) * inhibFactor * gel(s.X);
+  const dX_inhib = k * Math.max(0, 1 - s.X) * inhibFactor * gel(s.X);
+
+  // v5 — Mayo / Diels-Alder thermal self-initiation (bypasses MEHQ)
+  const M = M0_MOL_L * Math.max(0, 1 - s.X);
+  const Ri_th = p.A_th * Math.exp(-p.Ea_th / (R * T_rxn)) * M * M;
+
+  // v5 — Peroxide autocatalysis (ROOH state, bypasses MEHQ when ROOH decomposes)
+  const eta_ox = Math.min(1, Math.max(0, s.I / (p.I0 || 0.2)));
+  const k_d = p.A_d * Math.exp(-p.Ea_d / (R * T_rxn));
+  const Ri_perox = 2 * (p.f_d || 0.5) * k_d * Math.max(0, s.ROOH || 0);
+
+  // v5 — PMMA backbone scission (Synthron late-stage), wall-skin-weighted
+  const T_skin = s.T + 0.5 * dTstrat_K;
+  const k_p_th = p.A_p * Math.exp(-p.Ea_p / (R * T_skin));
+  const polyGate = 1 / (1 + Math.exp(-(s.X - 0.30) / 0.04));
+  const Ri_poly = 2 * (p.f_p || 0.5) * k_p_th * RHO_HH * s.X * M0_MOL_L * polyGate * PHI_SKIN;
+
+  // Chem-bypass channel — pseudo-steady [R•] yields propagation increment
+  const Ri_total = Ri_th + Ri_perox + Ri_poly;
+  const dX_chem = C_TH * Math.sqrt(Math.max(0, Ri_total)) * Math.max(0, 1 - s.X) * gel(s.X) / M0_MOL_L;
+
+  const dX = dX_inhib + dX_chem;
+
+  // MEHQ depletion: classic (k-coupled) + O2 cliff once polymerization started
   const o2_collapse = (s.X > 1e-5) ? 1e-3 * s.I : 0;
   const dI = -p.cInh * k - o2_collapse;
-  const Qgen    = p.mMonomer * (p.deltaH / 0.10012) * dX;
+
+  // ROOH dynamics: produced by R• capturing O2 while inhibitor alive; consumed by homolysis
+  const dROOH = eta_ox * Ri_th - k_d * Math.max(0, s.ROOH || 0);
+
+  // v5: ΔH_p decreases ~7% across full conversion
+  const deltaH_eff = p.deltaH * (1 - 0.07 * s.X);
+  const Qgen    = p.mMonomer * (deltaH_eff / 0.10012) * dX;
 
   // OPERATIONAL: effective cooling area is only a fraction of the geometric
   // A_cool — wetted-shell coverage from portable monitors is typically 30–60%,
@@ -208,22 +255,25 @@ function step(s, p){
   const Qcool = (UA_eff * (s.T - p.Twater) + Q_evap + Q_crack) * withdrawal_factor
               + Q_ir
               - solar(s.t, p.solarAmp);
-  const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
-  return { dT, dX, dI };
+  // v5: effective Cp shifts from monomer (1900) toward PMMA (1466) with conversion
+  const Cp_eff = p.Cp - 434 * s.X;
+  const dT = (Qgen - Qcool) / (p.mMonomer * Cp_eff);
+  return { dT, dX, dI, dROOH };
 }
 
 function rk4(s, dt, p){
   const k1 = step(s, p);
-  const s2 = { t:s.t+dt/2, T:s.T+k1.dT*dt/2, X:clamp01(s.X+k1.dX*dt/2), I:Math.max(0,s.I+k1.dI*dt/2) };
+  const s2 = { t:s.t+dt/2, T:s.T+k1.dT*dt/2, X:clamp01(s.X+k1.dX*dt/2), I:Math.max(0,s.I+k1.dI*dt/2), ROOH:Math.max(0,(s.ROOH||0)+k1.dROOH*dt/2) };
   const k2 = step(s2, p);
-  const s3 = { t:s.t+dt/2, T:s.T+k2.dT*dt/2, X:clamp01(s.X+k2.dX*dt/2), I:Math.max(0,s.I+k2.dI*dt/2) };
+  const s3 = { t:s.t+dt/2, T:s.T+k2.dT*dt/2, X:clamp01(s.X+k2.dX*dt/2), I:Math.max(0,s.I+k2.dI*dt/2), ROOH:Math.max(0,(s.ROOH||0)+k2.dROOH*dt/2) };
   const k3 = step(s3, p);
-  const s4 = { t:s.t+dt,   T:s.T+k3.dT*dt,   X:clamp01(s.X+k3.dX*dt),   I:Math.max(0,s.I+k3.dI*dt) };
+  const s4 = { t:s.t+dt,   T:s.T+k3.dT*dt,   X:clamp01(s.X+k3.dX*dt),   I:Math.max(0,s.I+k3.dI*dt),   ROOH:Math.max(0,(s.ROOH||0)+k3.dROOH*dt) };
   const k4 = step(s4, p);
   return {
     T: s.T + (k1.dT + 2*k2.dT + 2*k3.dT + k4.dT) * dt/6,
     X: clamp01(s.X + (k1.dX + 2*k2.dX + 2*k3.dX + k4.dX) * dt/6),
     I: Math.max(0, s.I + (k1.dI + 2*k2.dI + 2*k3.dI + k4.dI) * dt/6),
+    ROOH: Math.max(0, (s.ROOH||0) + (k1.dROOH + 2*k2.dROOH + 2*k3.dROOH + k4.dROOH) * dt/6),
   };
 }
 
@@ -251,28 +301,34 @@ function gaugeLikelihood(peakF_by_obs){
   return normalCdf((peakF_by_obs - 100 + SIGMA_GAUGE_F) / SIGMA_GAUGE_F);
 }
 
-function trajectory(p, startHour, endHour, surviveByHour, bleveThresholdF, dTstratF){
-  const effectiveThresholdF = bleveThresholdF - dTstratF;
-  let s = { t: startHour, T: p.T0, X: 0, I: p.I0 };
+function trajectory(p, startHour, endHour, surviveByHour, bleveThresholdF, dTstratBaseF){
+  // v5: dynamic stratification — grows with X as PMMA fouling kills convective mixing.
+  // ΔT_strat_eff(X) = ΔT_base · (1 + α·X), capped at DT_STRAT_MAX_F.
+  // Step() also uses this for the Arrhenius T_rxn so the model is internally consistent
+  // (threshold knows the hot spot; Arrhenius reacts at it).
+  p.dTstratF_base = dTstratBaseF;
+  let s = { t: startHour, T: p.T0, X: 0, I: p.I0, ROOH: p.ROOH0 ?? 5e-5 };
   let crossed = null, peakF = K2F(s.T), peakF_by_obs = K2F(s.T);
+  let peakX = 0;
   let t = startHour;
   while (t < endHour){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
+    if (s.X > peakX) peakX = s.X;
     if (t <= T_OBS_HOUR && TF > peakF_by_obs) peakF_by_obs = TF;
+    const dTstratNow = Math.min(DT_STRAT_MAX_F, dTstratBaseF * (1 + ALPHA_STRAT * s.X));
+    const effectiveThresholdF = bleveThresholdF - dTstratNow;
     if (crossed === null && TF >= effectiveThresholdF) crossed = t;
     if (crossed !== null && crossed < surviveByHour) break;
     if (TF > 280) break;
     const dt = TF > 200 ? 5 : (TF > 130 ? 20 : 60);
     const next = rk4(s, dt, p);
     t += dt/3600;
-    s.t = t; s.T = next.T; s.X = next.X; s.I = next.I;
+    s.t = t; s.T = next.T; s.X = next.X; s.I = next.I; s.ROOH = next.ROOH;
   }
-  // Hard rejection: failure observed-not-happened
   const hardOK = !(crossed !== null && crossed < surviveByHour);
-  // Soft weight: gauge censored likelihood
   const weight = hardOK ? gaugeLikelihood(peakF_by_obs) : 0;
-  return { crossed, peakF, peakF_by_obs, weight, hardOK };
+  return { crossed, peakF, peakF_by_obs, peakX, weight, hardOK };
 }
 
 // =============================================================================
@@ -319,10 +375,18 @@ function sampleParams(){
     RH:       clamp(0.60 + 0.10 * randn(), 0.30, 0.85),
     // Crack-vent area — log-normal around 1 cm², ~3× spread
     A_crack:  Math.exp(Math.log(1e-4) + 0.7 * randn()),
-    // Operational realism: wetted-shell coverage from portable monitors
     coverageFrac: clamp(0.5 + 0.12 * randn(), 0.25, 0.80),
-    // Crew duty cycle accounting for handovers, water-truck reloads, etc.
     dutyCycle:    clamp(0.88 + 0.06 * randn(), 0.70, 0.98),
+    // v5 chemistry priors (per kinetics-implementation spec)
+    A_th:  1.0e8,
+    Ea_th: clamp(115000 + 8000 * randn(), 100000, 130000),
+    A_d:   1.0e14,
+    Ea_d:  clamp(120000 + 8000 * randn(), 105000, 135000),
+    f_d:   0.5,
+    A_p:   1.0e12,
+    Ea_p:  clamp(130000 + 10000 * randn(), 110000, 150000),
+    f_p:   0.5,
+    ROOH0: Math.exp(Math.log(5e-5) + 0.8 * randn()),
   };
 }
 
@@ -332,9 +396,9 @@ function sampleBleveThresholdF(){
 }
 
 function sampleStratificationF(){
-  // Top-vs-bulk T difference in a 19%-filled vertical tank with limited mixing.
-  // 30-50 °F per audit; sampled N(20, 12) clipped [0, 50] for honest spread.
-  return clamp(20 + 12 * randn(), 0, 50);
+  // v5 — this is now the BASE stratification (at X=0). Step() applies a
+  // dynamic growth term (1 + 1.5·X) capped at 60 °F. So re-centered tighter.
+  return clamp(15 + 8 * randn(), 0, 30);
 }
 
 // =============================================================================
@@ -359,7 +423,7 @@ const NOW_HOUR   = 75;
 const END_HOUR   = 192;
 const t0wall     = Date.now();
 
-console.log(`MC v3 — anchor hr ${START_HOUR} (T=90 °F gauge), survival hr ${NOW_HOUR}, end hr ${END_HOUR}.`);
+console.log(`MC v5 — anchor hr ${START_HOUR} (T=90 °F gauge), survival hr ${NOW_HOUR}, end hr ${END_HOUR}.`);
 console.log(`Target ${N_TARGET.toLocaleString()} accepted trajectories…\n`);
 
 // Importance-sampling MC: every trajectory that passes the hard reject is
@@ -468,7 +532,7 @@ binsForChart.push({ label: 'Does not cross (holds)', pct: holdsPct, hold: true }
 
 const result = {
   generated_at: new Date().toISOString(),
-  model_version: 'v4 — importance-sampled, post-six-agent audit, 2026-05-25',
+  model_version: 'v5 — adds Mayo/Diels-Alder + peroxide + polymer auto-cat + dynamic stratification, 2026-05-25',
   n_target: N_TARGET,
   n_accepted: accepted,
   n_attempted: attempted,

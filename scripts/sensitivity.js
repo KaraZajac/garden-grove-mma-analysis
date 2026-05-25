@@ -87,7 +87,8 @@ function step(s, p){
   const dX = k * Math.max(0, 1 - s.X) * inhibFactor * gel(s.X);
   const o2_collapse = (s.X > 1e-5) ? 1e-3 * s.I : 0;
   const dI = -p.cInh * k - o2_collapse;
-  const Qgen    = p.mMonomer * (p.deltaH / 0.10012) * dX;
+  const deltaH_eff = p.deltaH * (1 - 0.07 * s.X);
+  const Qgen    = p.mMonomer * (deltaH_eff / 0.10012) * dX;
   const opsCool = (p.coverageFrac ?? 0.5) * (p.dutyCycle ?? 0.9);
   const UA_eff  = effectiveUA(p.UA, s.X, p) * opsCool;
   const Q_evap  = evapCooling(s.T, p) * opsCool;
@@ -97,7 +98,8 @@ function step(s, p){
   const withdrawal_factor = withdrawn ? 0.1 : 1.0;
   const Qcool = (UA_eff * (s.T - p.Twater) + Q_evap + Q_crack) * withdrawal_factor
               + Q_ir - solar(s.t, p.solarAmp);
-  return { dT:(Qgen-Qcool)/(p.mMonomer*p.Cp), dX, dI };
+  const Cp_eff = p.Cp - 434 * s.X;
+  return { dT:(Qgen-Qcool)/(p.mMonomer*Cp_eff), dX, dI };
 }
 function rk4(s, dt, p){
   const k1=step(s,p);
