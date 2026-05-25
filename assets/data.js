@@ -7,7 +7,7 @@ window.GG = {
     chemical: "Methyl methacrylate (MMA), C5H8O2",
     inhibitor: "MEHQ (monomethyl ether hydroquinone, ~10–100 ppm) — requires dissolved O2",
     tankVolumeGal: 34000,
-    productGal: 6500, // reported range 6,000–7,000
+    productGal: 7000, // 7,000 gal confirmed in updated reporting (was reported 6,000–7,000 range)
     evacuated: 50000,
     t0: "Thu May 21, 3:40 pm PDT",
     runawayThresholdF: 100, // crews' own field estimate
@@ -40,9 +40,12 @@ window.GG = {
     {h:55,   when:"Sat 5/23, 10:40 pm", tempF:null,  type:"measured",  event:"Water-line disruption; water dept re-enters exclusion zone to restore deluge (ABC7)", risk:"Critical"},
     {h:60,   when:"Sun 5/24, 3:40 am",  tempF:null,  type:"measured",  event:"Covey: 'allowing it to cure at a slower rate and reducing overpressure' (LAist)",    risk:"Severe"},
     {h:62,   when:"Sun 5/24, 6:00 am",  tempF:null,  type:"measured",  event:"Anaheim official: 'no major changes overnight'; deluge held through water-line event", risk:"Severe"},
-    {h:65,   when:"Sun 5/24, 9:00 am",  tempF:null,  type:"modeled",   event:"Current — survival cutoff for the MC posterior",                              risk:"Severe"},
-    {h:72,   when:"Sun 5/24, 3:40 pm",  tempF:null,  type:"hypothesized", event:"Hypothesized solar peak window — MC posterior puts ~3% mass here",          risk:"High"},
+    {h:64,   when:"Sun 5/24, 7:40 am",  tempF:null,  type:"measured",  event:"Specialized recon discovers crack(s) in tank shell; potentially relieving pressure (ABC7/FoxLA McGovern)", risk:"Critical"},
+    {h:68,   when:"Sun 5/24, 11:40 am", tempF:null,  type:"measured",  event:"OCFA Interim Chief McGovern publicly announces crack; 'positive intel that could shift response'", risk:"Severe"},
+    {h:74,   when:"Sun 5/24, 5:40 pm",  tempF:100,   type:"measured",  event:"Interior gauge ≥100 °F — PEGGED at maximum. True T unknown; old runaway threshold empirically falsified (ABC7)", risk:"Critical"},
+    {h:75,   when:"Sun 5/24, 6:40 pm",  tempF:null,  type:"modeled",   event:"Current — MC survival cutoff; tank surviving past 100°F validates higher BLEVE threshold",  risk:"Critical"},
     {h:96,   when:"Mon 5/25, 3:40 pm",  tempF:null,  type:"hypothesized", event:"Secondary solar peak window; afternoon clustering still holds within days", risk:"High"},
+    {h:148,  when:"Wed 5/27, ~7:40 pm", tempF:213,   type:"hypothesized", event:"MMA boiling point ≈ Picazo BLEVE threshold (LAT) — well above empirical 100°F gauge", risk:"Critical"},
   ],
 
   // Garden Grove ambient air forecast (°F)
@@ -100,6 +103,14 @@ window.GG = {
       ["loscerritos-gkn-background.md",                "Los Cerritos",   "Background on GKN Aerospace; prior environmental violations"],
       ["oag-price-gouging-alert.md",                   "CA AG",          "California Attorney General price-gouging warning"],
       ["ocde-school-closures.md",                      "OC Dept of Ed",  "Orange County school closures in evacuation zone"],
+      ["abc7-temperature-over-100-gauge-cap.md",       "ABC7 LA",        "★ Sun 5:50 PM PDT — gauge pegged ≥100 °F; old threshold falsified"],
+      ["abc7-cracks-positive-intel-mcgovern.md",       "ABC7 LA",        "★ Sun — cracks discovered; McGovern calls 'positive intel'"],
+      ["latimes-picazo-why-tank-hard-to-fix.md",       "LA Times",       "★ Picazo (USC chem prof): BLEVE physics threshold ≈ 213 °F"],
+      ["foxla-may24-live-mcgovern-crack.md",           "FOX 11 LA",      "Independent corroboration of crack discovery + gauge-pegged reading"],
+      ["nbc-la-da-investigation-focus.md",             "NBC LA",         "DA Spitzer scope clarified — maintenance records, NOT sabotage"],
+      ["dnyuz-latimes-resolution-pathway.md",          "DNYUZ/LAT",      "Resolution pathways: passive headspace buffer; controlled spill"],
+      ["mira-safety-mma-chemistry-explainer.md",       "MIRA Safety",    "Colin Ma — MEHQ-depletion → thermal-runaway mechanism"],
+      ["sytepoint-asset-integrity-failure.md",         "Sytepoint",      "Karapetyan — proximate cause is asset-integrity failure (PSV)"],
       ["INDEX.md",                                     "INDEX",          "All news files with summaries"],
     ],
     reference: [

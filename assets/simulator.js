@@ -20,7 +20,7 @@
     Ea:       95000,     // J/mol       activation energy
     deltaH:   57700,     // J/mol       heat of polymerization
     cInh:     2.0e-2,    // inhibitor consumption coupling
-    mMonomer: 23000,     // kg
+    mMonomer: 24900,     // kg = 7,000 gal × 0.94 kg/L × 3.785 L/gal
     Cp:       1900,      // J/(kg K)
     UA:       2200,      // W/K         CLEAN cooling capacity (no fouling)
     Twater:   297,       // K           ~75 °F

@@ -57,6 +57,32 @@ function pTotalPa(T_K){
   return P_AIR_INIT * T_K / T0_VAP + pMmaPa(T_K);
 }
 
+// Timing constants for the observed-evidence constraints.
+//   PSV_GRACE_END:    Thursday vent considered settled by this hour
+//   CRACK_OBSERVED:   late-Sat-night recon discovered cracks (announced hr 68)
+//   T_OBS_HOUR:       gauge-pegged ≥100 °F reading time (Sun 5:40 pm PDT)
+//   T_OBS_MIN_F:      gauge minimum reading w/ 5 °F slop for calibration
+const PSV_GRACE_END  = 12;
+const CRACK_OBSERVED = 64;
+const T_OBS_HOUR     = 74;
+const T_OBS_MIN_F    = 95;
+
+// Crack-vent cooling — post hour 64, vapor can escape through the observed
+// cracks. As T approaches MMA's boiling point (T_bp = 374.15 K = 213 °F),
+// vapor pressure approaches atmospheric and venting flow ramps sharply,
+// dumping latent heat at ~360 kJ/kg. Implemented as a stiff negative-
+// feedback term that activates within ~5 K of BP and caps trajectories near
+// the boiling plateau. K_crack chosen so Q_crack ≈ 50 kW at T = BP, which
+// is the right order of magnitude to absorb the model's typical Q_gen near
+// runaway and impose a soft ceiling.
+const T_BP_K = 374.15;
+function crackVentCooling(T_K, p, t){
+  if (t < CRACK_OBSERVED) return 0;
+  if (T_K <= T_BP_K - 5) return 0;
+  const K_crack = p.kCrack ?? 5000;     // W/K
+  return Math.max(0, K_crack * (T_K - (T_BP_K - 5)));
+}
+
 // Evaporative cooling from the deluge film (latent heat).
 function evapCooling(T_bulk_K, p){
   if (!p.evapOn) return 0;
@@ -79,10 +105,11 @@ function step(s, p){
   const o2_collapse_rate = (s.X > 0.005) ? 5e-4 * s.I : 0;
   const dI = -p.cInh * k - o2_collapse_rate;
   // Qgen = m_kg × (ΔH_J/mol / MW_kg/mol) × dX/dt   →   W
-  const Qgen   = p.mMonomer * (p.deltaH / 0.10012) * dX;
-  const UA_eff = effectiveUA(p.UA, s.X, p);
-  const Q_evap = evapCooling(s.T, p);
-  const Qcool  = UA_eff * (s.T - p.Twater) + Q_evap - solar(s.t, p.solarAmp);
+  const Qgen    = p.mMonomer * (p.deltaH / 0.10012) * dX;
+  const UA_eff  = effectiveUA(p.UA, s.X, p);
+  const Q_evap  = evapCooling(s.T, p);
+  const Q_crack = crackVentCooling(s.T, p, s.t);
+  const Qcool   = UA_eff * (s.T - p.Twater) + Q_evap + Q_crack - solar(s.t, p.solarAmp);
   const dT = (Qgen - Qcool) / (p.mMonomer * p.Cp);
   return { dT, dX, dI };
 }
@@ -111,27 +138,38 @@ function rk4(s, dt, p){
 //     contradicts observed history.
 // surviveByHour: accept only trajectories that DIDN'T cross OR vent before that time.
 function trajectory(p, startHour, endHour, surviveByHour, runawayF){
-  const PSV_GRACE_END = 12;          // hr — Thursday vent considered settled by this point
   const psv_set_Pa = P_ATM + (p.psvPsig ?? 1.5) * 6894.76;
 
   let s = { t: startHour, T: p.T0, X: 0.02, I: p.I0 ?? 0.3 };
   let crossed = null, vented = null;
   let peakF = K2F(s.T);
+  let peakF_by_obs = K2F(s.T);    // hottest T reached by hr T_OBS_HOUR
   let t = startHour;
   while (t < endHour){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
+    if (t <= T_OBS_HOUR && TF > peakF_by_obs) peakF_by_obs = TF;
     if (crossed === null && TF >= runawayF) crossed = t;
-    if (vented === null && t > PSV_GRACE_END && pTotalPa(s.T) > psv_set_Pa) vented = t;
-    if (TF > 250) break;
-    const dt = TF > 95 ? 5 : 60;
+    if (vented === null && t > PSV_GRACE_END && t < CRACK_OBSERVED
+        && pTotalPa(s.T) > psv_set_Pa) vented = t;
+    // Early-out: once a trajectory has been determined to fail before now,
+    // no need to keep integrating it.
+    if (crossed !== null && crossed < surviveByHour) break;
+    if (vented  !== null && vented  < surviveByHour) break;
+    if (TF > 280) break;
+    const dt = TF > 200 ? 5 : (TF > 130 ? 20 : 60);
     const next = rk4(s, dt, p);
     t += dt/3600;
     s.t = t; s.T = next.T; s.X = next.X; s.I = next.I;
   }
+  // Survival conditions (must satisfy all):
+  //   (a) no runaway-threshold crossing before now
+  //   (b) no PSV vent in [12, 64)
+  //   (c) reached at least 100 °F by hour 74 (the gauge-pegged observation)
   const survivedToNow = !((crossed !== null && crossed < surviveByHour) ||
-                          (vented  !== null && vented  < surviveByHour));
-  return { crossed, peakF, survivedToNow, vented };
+                          (vented  !== null && vented  < surviveByHour)) &&
+                        (peakF_by_obs >= T_OBS_MIN_F);
+  return { crossed, peakF, survivedToNow, vented, peakF_by_obs };
 }
 
 // ---------- priors ----------------------------------------------------------
@@ -151,7 +189,7 @@ function sampleParams(){
     Ea:       clamp(94000 + 5000 * randn(),  78000, 110000),
     deltaH:   57700,
     cInh:     2.0e-2,
-    mMonomer: 23000,
+    mMonomer: 24900,    // 7,000 gal × 0.94 kg/L × 3.785 L/gal
     Cp:       1900,
     I0:       clamp(0.10 + 0.25 * Math.abs(randn()), 0.0, 0.95),
     UA:       Math.exp(Math.log(2000) + 0.45 * randn()),
@@ -176,36 +214,40 @@ function sampleParams(){
   };
 }
 function sampleThresholdF(){
-  // Field-reported "approximately 100 °F" -> N(100, 4), clipped.
-  return clamp(100 + 4 * randn(), 88, 114);
+  // PARADIGM SHIFT (Sun 5/24): interior gauge passed 100 °F without
+  // catastrophic failure → the "approximately 100 °F out of control"
+  // field quote was a CAUTION threshold, not a CATASTROPHIC one.
+  // Picazo (USC, LAT) places the real BLEVE threshold at MMA's boiling
+  // point ≈ 213 °F (100 °C) — above this, liquid→gas transition drives
+  // super-linear pressure rise. Centered there with moderate spread.
+  return clamp(210 + 25 * randn(), 160, 260);
 }
 
 // ---------- binning ---------------------------------------------------------
 // Hour 0 = Thu 5/21 3:40 pm PDT.  Hour 30 = Fri 9:40 pm.  Hour 54 = Sat 9:40 pm.
-// Bins start at NOW_HOUR=62 (Sun 6 am PDT).
+// Bins start at NOW_HOUR=75 (Sun 6:40 pm PDT).
 const bins = [
-  { id:'sun-morn',      label:'Sun 6am – 12pm',       lo:62, hi:68  },
-  { id:'sun-aft',       label:'Sun 12pm – 7pm',       lo:68, hi:75,  primary:true },
-  { id:'sun-eve',       label:'Sun 7pm – midnight',   lo:75, hi:80  },
-  { id:'mon-overnight', label:'Mon 12am – 12pm',      lo:80, hi:92  },
-  { id:'mon-aft',       label:'Mon 12pm – 7pm',       lo:92, hi:99,  secondary:true },
-  { id:'mon-eve',       label:'Mon evening → Tue 6am',lo:99, hi:110 },
-  { id:'tue',           label:'Tue (full day)',       lo:110, hi:134, tertiary:true },
-  { id:'wed-plus',      label:'Wed or later',         lo:134, hi:9999 },
+  { id:'sun-eve',       label:'Sun 7pm – midnight',     lo:75,  hi:80,  primary:true },
+  { id:'mon-overnight', label:'Mon 12am – 12pm',        lo:80,  hi:92  },
+  { id:'mon-aft',       label:'Mon 12pm – 7pm',         lo:92,  hi:99,  secondary:true },
+  { id:'mon-eve',       label:'Mon evening → Tue 6am',  lo:99,  hi:110 },
+  { id:'tue',           label:'Tue (full day)',         lo:110, hi:134, tertiary:true },
+  { id:'wed',           label:'Wed (full day)',         lo:134, hi:158 },
+  { id:'thu-plus',      label:'Thu or later',           lo:158, hi:9999 },
 ];
 
 // ---------- main ------------------------------------------------------------
 const N_TARGET   = parseInt(process.argv[2] || '10000', 10);
-const START_HOUR = 30;        // last hard-measured interior temperature anchor (Fri 9:40 pm PDT, 90 °F)
-const NOW_HOUR   = 62;        // Sun 6 am PDT — Anaheim official: "no major changes overnight"
-const END_HOUR   = 168;       // ~Thu morning
+const START_HOUR = 30;        // Fri 9:40 pm PDT — interior gauge 90 °F (last solid numeric anchor)
+const NOW_HOUR   = 75;        // Sun 6:40 pm PDT — survival anchor; gauge had passed 100 °F at hr 74
+const END_HOUR   = 192;       // ~Fri morning
 const t0wall     = Date.now();
 
 console.log(`Monte Carlo: anchor at hr ${START_HOUR} (90 °F), survival cutoff hr ${NOW_HOUR}, end hr ${END_HOUR}.`);
 console.log(`Target ${N_TARGET.toLocaleString()} accepted trajectories…\n`);
 
 let attempted = 0, accepted = 0, holds = 0, crossed = 0;
-let rejectedCross = 0, rejectedVent = 0;
+let rejectedCross = 0, rejectedVent = 0, rejectedColdAtObs = 0;
 const counts = new Map(bins.map(b => [b.id, 0]));
 const crossingTimes = [];
 const peakFs = [];
@@ -218,6 +260,7 @@ while (accepted < N_TARGET){
   if (!out.survivedToNow){
     if (out.crossed !== null && out.crossed < NOW_HOUR) rejectedCross++;
     else if (out.vented !== null && out.vented < NOW_HOUR) rejectedVent++;
+    else if (out.peakF_by_obs < 100) rejectedColdAtObs++;
     continue;
   }
   accepted++;
@@ -298,8 +341,9 @@ const outPath = path.join(__dirname, '..', 'assets', 'montecarlo-results.json');
 fs.writeFileSync(outPath, JSON.stringify(result, null, 2));
 console.log(`\nDone in ${dur.toFixed(1)}s.`);
 console.log(`Accepted ${accepted.toLocaleString()} / Attempted ${attempted.toLocaleString()}  (acceptance ${(accepted/attempted*100).toFixed(1)}%)`);
-console.log(`  rejected by 100°F crossing: ${rejectedCross.toLocaleString()}  (${(rejectedCross/attempted*100).toFixed(1)}%)`);
-console.log(`  rejected by PSV-vent:       ${rejectedVent.toLocaleString()}  (${(rejectedVent/attempted*100).toFixed(1)}%)`);
+console.log(`  rejected by threshold crossing: ${rejectedCross.toLocaleString()}  (${(rejectedCross/attempted*100).toFixed(1)}%)`);
+console.log(`  rejected by PSV-vent:           ${rejectedVent.toLocaleString()}  (${(rejectedVent/attempted*100).toFixed(1)}%)`);
+console.log(`  rejected (T < 100°F at hr 74):  ${rejectedColdAtObs.toLocaleString()}  (${(rejectedColdAtObs/attempted*100).toFixed(1)}%)`);
 console.log(`Holds: ${holdsPct}%   Crosses: ${crossesPct}%`);
 if (median != null){
   console.log(`Median crossing time: hr ${median.toFixed(1)} = ${result.median_crossing_label}`);

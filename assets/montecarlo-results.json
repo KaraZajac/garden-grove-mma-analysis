@@ -1,75 +1,69 @@
 {
-  "generated_at": "2026-05-24T23:47:46.675Z",
-  "n_target": 10000,
-  "n_accepted": 10000,
-  "n_attempted": 26039,
-  "acceptance_rate": 38.4,
+  "generated_at": "2026-05-25T04:07:12.617Z",
+  "n_target": 2000,
+  "n_accepted": 2000,
+  "n_attempted": 825154,
+  "acceptance_rate": 0.24,
   "anchor": "T = 90 °F at hour 30 (Fri 5/22 ~9:40 pm PDT interior gauge)",
-  "survival_cutoff_hour": 62,
-  "end_hour": 168,
-  "duration_sec": 59,
-  "holds_pct": 95.99,
-  "crosses_pct": 4.01,
-  "median_crossing_hour": 89.82499999997574,
-  "median_crossing_label": "Mon 5/25 9:29 am PDT",
-  "iqr_p25_hour": 72.91111111110457,
-  "iqr_p25_label": "Sun 5/24 4:34 pm PDT",
-  "iqr_p75_hour": 117.22083333330868,
-  "iqr_p75_label": "Tue 5/26 12:53 pm PDT",
-  "peak_p50_F": 90.01782911027075,
-  "peak_p90_F": 92.28070399939183,
+  "survival_cutoff_hour": 75,
+  "end_hour": 192,
+  "duration_sec": 1539.4,
+  "holds_pct": 4.45,
+  "crosses_pct": 95.55,
+  "median_crossing_hour": 79.02222222221974,
+  "median_crossing_label": "Sun 5/24 10:41 pm PDT",
+  "iqr_p25_hour": 76.79027777777631,
+  "iqr_p25_label": "Sun 5/24 8:27 pm PDT",
+  "iqr_p75_hour": 82.35277777777559,
+  "iqr_p75_label": "Mon 5/25 2:01 am PDT",
+  "peak_p50_F": 441.3337188730035,
+  "peak_p90_F": 3362.0588940453767,
   "bins": [
     {
-      "label": "Sun 6am – 12pm",
-      "pct": 0.57,
-      "primary": false,
-      "secondary": false
-    },
-    {
-      "label": "Sun 12pm – 7pm",
-      "pct": 0.57,
+      "label": "Sun 7pm – midnight",
+      "pct": 55,
       "primary": true,
       "secondary": false
     },
     {
-      "label": "Sun 7pm – midnight",
-      "pct": 0.39,
-      "primary": false,
-      "secondary": false
-    },
-    {
       "label": "Mon 12am – 12pm",
-      "pct": 0.55,
+      "pct": 37.65,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Mon 12pm – 7pm",
-      "pct": 0.24,
+      "pct": 2.45,
       "primary": false,
       "secondary": true
     },
     {
       "label": "Mon evening → Tue 6am",
-      "pct": 0.47,
+      "pct": 0.3,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Tue (full day)",
-      "pct": 0.57,
+      "pct": 0,
       "primary": false,
       "secondary": false
     },
     {
-      "label": "Wed or later",
-      "pct": 0.65,
+      "label": "Wed (full day)",
+      "pct": 0.05,
+      "primary": false,
+      "secondary": false
+    },
+    {
+      "label": "Thu or later",
+      "pct": 0.1,
       "primary": false,
       "secondary": false
     },
     {
       "label": "Does not cross (holds)",
-      "pct": 95.99,
+      "pct": 4.45,
       "hold": true
     }
   ]

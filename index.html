@@ -55,15 +55,15 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      The 10k Monte Carlo — full physics (evap cooling, PMMA fouling, O₂–MEHQ cliff, clock-aligned solar) and now <b>two independent survival constraints</b> (no 100 °F crossing AND no visible PSV vent) — puts holds at <b><span id="bluf-holds">~96</span>%</b> through midweek. Adding the PSV non-vent constraint (back-calibrated to ~1.5 psig from the Thursday auto-vent at ~95 °F) pruned an extra ~5% of slow-creep trajectories the threshold filter alone missed. Failure mass is thin (~0.4–0.8% per day-window) and flat across the week with no dominant near-term cluster. Median crossing <i>if</i> it fails: <span id="bluf-median">Mon late morning PDT</span>.
+      <b>Paradigm shift Sun 5/24 evening.</b> Interior gauge pegged at ≥100 °F by 5:50 PM PDT — the original 100 °F runaway threshold is empirically falsified. Threshold prior re-centered on Picazo's BLEVE physics (MMA boiling ≈ 213 °F). With three independent survival constraints (no BLEVE crossing, no visible PSV vent, T ≥ 95 °F by hour 74), the model now has only ~0.2% prior-acceptance — the observations are barely consistent with the priors. Of the <b>~2,000 accepted trajectories</b>, <b><span id="bluf-holds">~4.5</span>% hold</b> through Wednesday; the remaining <b>~95% cross the BLEVE threshold</b> with median <span id="bluf-median">Sun ~10:41 PM PDT</span> (IQR Sun 8 PM → Mon 2 AM). Top sensitivity is the deluge mass-transfer coefficient h_m (Δ 82% over its range — single dominant lever). The model is saying near-term BLEVE risk is high; OCFA is publicly more optimistic about the crack-vent path. <b>Caveat: the crack-vent cooling term is new and approximate.</b>
     </div>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Holds</div><div class="v" id="bluf-holds-2">— %</div><div class="vsm">Posterior, with evap cooling</div></div>
+    <div class="box"><div class="k">Holds</div><div class="v" id="bluf-holds-2">— %</div><div class="vsm">post-paradigm-shift posterior</div></div>
     <div class="box"><div class="k">Median crossing</div><div class="v" id="bluf-median-2">—</div><div class="vsm">IQR: <span id="bluf-iqr">—</span></div></div>
-    <div class="box"><div class="k">Most-likely failure window</div><div class="v" id="bluf-top-bin">Sat night → Sun 6 am</div><div class="vsm" id="bluf-top-pct">≈ —</div></div>
-    <div class="box"><div class="k">Top sensitivity</div><div class="v" id="bluf-sens-top">Spray water T</div><div class="vsm" id="bluf-sens-delta">Δ —</div></div>
+    <div class="box"><div class="k">Most-likely window</div><div class="v" id="bluf-top-bin">Sun 7pm – midnight</div><div class="vsm" id="bluf-top-pct">≈ —</div></div>
+    <div class="box"><div class="k">Top sensitivity</div><div class="v" id="bluf-sens-top">h_m (evap)</div><div class="vsm" id="bluf-sens-delta">Δ —</div></div>
   </div>
 </section>
 
@@ -72,7 +72,8 @@
   <h2>What changed recently</h2>
   <p>Active model. Brief audit trail of substantive shifts in this session, latest first:</p>
   <ul>
-    <li><b>PSV non-vent constraint added to the MC.</b> The tank visibly auto-vented Thursday at ~95 °F bulk, which back-calibrates the relief setpoint to ~1.5 psig (low-pressure atmospheric storage). Since then the public record shows no further visible venting. That's information the model was discarding. Adding it as a second rejection criterion (reject trajectories where total vapor pressure would exceed P_set between hour 12 and now) prunes an additional ~5% of trajectories — slow-creep paths that would have visibly vented without detonating. Holds 95.4% → 96.0%; posterior tightens.</li>
+    <li><b>Paradigm shift (Sun 5/24 evening):</b> OSINT pass found <b>(a) interior gauge pegged at ≥100 °F at 5:50 PM PDT</b> — empirically falsifies the old 100 °F runaway threshold; <b>(b) cracks discovered overnight Sat→Sun</b> per McGovern (Interim Chief), potentially relieving pressure; <b>(c) Picazo (USC, in LAT) puts the real BLEVE threshold at MMA's boiling point ≈ 213 °F</b>. Model updates: threshold prior N(100,4) → N(210,25); added new constraint "T ≥ 95 °F by hour 74"; added crack-vent cooling that ramps near boiling and caps trajectories around 213 °F; PSV constraint window limited to [12, 64] since cracks now provide passive relief; updated mMonomer 23,000 → 24,900 kg (7,000 gal confirmed); survival cutoff hour 62 → 75. <b>Result: holds dropped from 96% to ~4.5%</b>. Acceptance rate fell to 0.2% — the observations are barely consistent with the priors, which is itself informative.</li>
+    <li><b>PSV non-vent constraint added to the MC.</b> The tank visibly auto-vented Thursday at ~95 °F bulk, which back-calibrates the relief setpoint to ~1.5 psig (low-pressure atmospheric storage). Since then the public record shows no further visible venting. That's information the model was discarding. Adding it as a second rejection criterion (reject trajectories where total vapor pressure would exceed P_set between hour 12 and the present) prunes meaningful additional slow-creep trajectories the threshold filter alone misses.</li>
     <li><b>Survival cutoff extended to Sun 6 am PDT (hour 62).</b> Overnight cron pulled 9 new sources including an Anaheim CivicAlert ("no major changes overnight") and an ABC7 live-blog entry documenting a <b>water-line disruption Sat ~11 pm PDT</b>. The tank survived both. Survival filter now rejects more fast-fail trajectories → holds 94% → ~95%, median crossing pushed 14 h later (Sun ~8 pm → Mon ~11 am).</li>
     <li><b>Covey's "cure at a slower rate" framing explicitly confirmed</b> (LAist) — directly validates the slow-cure interpretation: the heavy deluge is letting polymerization happen at a controlled pace rather than tipping. OCFA also confirms a <b>controlled spill is the "preferred outcome"</b> with storm-drain containment in place.</li>
     <li><b>Evaporative cooling from the deluge.</b> Gap analysis flagged the latent-heat term as missing — water film on a hot shell evaporates at 2.26 MJ/kg, roughly doubling the cooling capacity at typical conditions. Added with conservative h_m prior. Net effect: holds 66% → ~94%.</li>
@@ -109,7 +110,9 @@
         <li><b>O₂-starved inhibitor.</b> A hot vapor-locked tank depletes dissolved O₂; MEHQ stops working even where it is present.</li>
         <li><b>Trommsdorff gel effect.</b> As MMA polymerizes and thickens, termination slows and the reaction self-accelerates — sharper than plain Arrhenius predicts.</li>
         <li><b>Polymer-skin fouling.</b> PMMA solidifies preferentially on cool surfaces — the inside of the tank wall where the deluge is hitting. PMMA's thermal conductivity is ~0.19 W/(m·K), almost 300× worse than steel. Even a 1 cm polymer skin doubles the wall's thermal resistance; 2 cm triples it. This is a brutal positive feedback: the chemistry that produces heat also produces the insulation that traps it.</li>
-        <li><b>Single observable.</b> Only one risky interior reading per cycle (drone scans every 10 min are exterior proxies).</li>
+        <li><b>Cracks observed Sun 5/24.</b> A late-Sat-night recon mission discovered cracks in the tank shell. McGovern (Interim Chief): "potentially relieving some of the pressure." This is a partial passive vent — vapor can escape, dumping latent heat at ~360 kJ/kg. Helps. But cracks in a heating MMA vessel can also be the precursor to ductile-then-brittle failure (BLEVE precursor) — ambiguous.</li>
+        <li><b>Boiling-point threshold (Picazo, USC).</b> The actual BLEVE physics threshold is MMA's boiling point ≈ 213 °F / 101 °C — above this, liquid→gas transition drives super-linear pressure rise that no PSV can keep up with. The earlier responder quote about "approximately 100 °F out of control" was a caution threshold, not a catastrophic one — confirmed empirically now that the gauge has pegged ≥100 °F without immediate failure.</li>
+        <li><b>Gauge ceiling.</b> The interior gauge maxes at 100 °F. Once pegged (Sun 5:50 PM), the true bulk temperature is <b>unknown</b> — could be 105, could be 180. The model has to infer from the rate-of-rise history.</li>
       </ul>
     </div>
   </div>
@@ -143,35 +146,41 @@
 
   <div class="card">
     <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
-k(T)        = A · exp(−Ea / R·T)                            Arrhenius rate
-g(X)        = 1                       if X &lt; 0.05
-            = 1 + 18·X^2.2             if X ≥ 0.05           Trommsdorff gel-effect amplifier
-dX/dt       = k · (1−X) · (1−I) · g(X)                       conversion
-dI/dt       = −c · k − c_O2·I·H(X − 0.005)                   MEHQ depletion + O₂-cliff (post-audit)
-δ(X)        = f_plate · X · m / (ρ_PMMA · A_cool)            polymer-skin layer thickness
-R_foul(X)   = δ(X) / k_PMMA                                  PMMA thermal resistance
-U_eff(X)    = 1 / (1/U_clean + R_foul(X))                    fouled heat-transfer coefficient
-Q_evap      = h_m · A_cool · (P_sat(T_film) − RH·P_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
+k(T)         = A · exp(−Ea / R·T)                            Arrhenius rate
+g(X)         = 1 + 18·X^2.2     (for X ≥ 0.05; else 1)       Trommsdorff gel-effect amplifier
+dX/dt        = k · (1−X) · (1−I) · g(X)                      conversion
+dI/dt        = −c · k − c_O2·I·H(X − 0.005)                  MEHQ + O₂-cliff
+δ(X)         = f_plate · X · m / (ρ_PMMA · A_cool)           polymer-skin thickness
+U_eff(X)     = 1 / (1/U_clean + δ(X)/k_PMMA)                 fouled heat-transfer coefficient
+Q_evap       = h_m · A_cool · (P_sat(T_film) − RH·P_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
                                                              deluge latent-heat cooling
-hod(t)      = (t_hr + 15.667) mod 24                         clock-aligned (Hour 0 = Thu 15:40 PDT)
-Q_solar(t)  = S_max · max(0, cos(2π·(hod − 15)/24))          diurnal forcing
-dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
-  Q_gen     = m · ΔH_p · dX/dt                               heat released by polymerization
-  Q_cool    = U_eff(X)·A · (T − T_water) + Q_evap − Q_solar  fouled sensible + evaporative − solar
+Q_crack(T,t) = K_crack · max(0, T − (T_bp − 5))   for t ≥ 64 h    crack-vent boiling cooling (NEW)
+P_total(T)   = P_air₀·T/T₀ + P_MMA(T)                        vapor-space pressure (Antoine)
+hod(t)       = (t_hr + 15.667) mod 24                        clock-aligned local hour
+Q_solar(t)   = S_max · max(0, cos(2π·(hod − 15)/24))         diurnal forcing
+dT/dt        = (Q_gen − Q_cool) / (m · Cp)                   energy balance
+  Q_gen      = m · ΔH_p · dX/dt
+  Q_cool     = U_eff(X)·A · (T − T_water) + Q_evap + Q_crack − Q_solar
+
+Survival constraints (a trajectory is ACCEPTED only if ALL hold):
+  (1)  T &lt; runawayF    for all t ∈ [30, 75]      BLEVE threshold not crossed
+  (2)  P_total &lt; P_psv  for all t ∈ [12, 64]      no visible PSV vent
+  (3)  max T(t)         ≥ 95 °F  for t ≤ 74      gauge pegged ≥ 100 °F at hour 74
     </code>
   </div>
 
-  <p><b>Three positive-feedback / negative-feedback terms govern the dynamics:</b></p>
+  <p><b>Feedback / loss terms governing the dynamics:</b></p>
   <ul>
-    <li><b>PMMA wall fouling</b> (positive). k_PMMA = 0.19 W/(m·K) is roughly 300× more insulating than steel — at X = 2% effective cooling drops ~50%; at X = 10% it drops 85%. Chemistry that makes heat also makes the insulation that traps it.</li>
-    <li><b>O₂–MEHQ cliff</b> (positive). MEHQ only inhibits in the presence of dissolved O₂. Once polymerization consumes the O₂ (X &gt; ~0.005), MEHQ goes inert on minutes-to-hours, not the ~2,500 h that <code>dI/dt = −c·k</code> alone gave. This was missing pre-audit.</li>
-    <li><b>Evaporative cooling</b> (negative — added latest). Water film on the hot shell evaporates at latent heat 2.26 MJ/kg. At T_bulk ≈ 90 °F, T_water = 75 °F, h_m = 0.02 m/s the evap term contributes ~26 kW vs ~18 kW sensible — roughly doubles the cooling capacity. Highly sensitive to h_m, which has order-of-magnitude operational uncertainty.</li>
+    <li><b>PMMA wall fouling</b> (positive). At X = 2% effective cooling drops ~50%; at X = 10% it drops 85%.</li>
+    <li><b>O₂–MEHQ cliff</b> (positive). Once polymerization consumes O₂ (X &gt; ~0.005), inhibitor collapses on minutes-to-hours.</li>
+    <li><b>Evaporative cooling</b> (negative). Water film latent heat ~26 kW at T_bulk ≈ 90 °F — roughly doubles sensible cooling. Highly sensitive to h_m (mass-transfer coefficient, order-of-magnitude operational uncertainty).</li>
+    <li><b>Crack-vent cooling</b> (negative, post hour 64). MMA vapor escaping through the observed cracks dumps latent heat at ~360 kJ/kg. Ramps sharply as T approaches MMA's boiling point (213 °F); functionally caps trajectories near the boiling plateau if the rest of the system is balanced. Magnitude is approximate — no measurement of crack flow rate exists.</li>
   </ul>
 
   <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with T while sensible cooling grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U_eff·A</code>, no stable steady state exists. The evaporative term <i>also</i> grows nonlinearly with T (via P_sat), which is why adding it changes the steady-state structure, not just the magnitude.</p>
 
-  <div class="callout warn">
-    <b>Threshold calibration:</b> the runaway line is set to the responders' own <b>~100 °F "out-of-control"</b> estimate, not a textbook number. Their safe-neutralization target is ~50 °F. Both are verbal field figures, not lab values — see caveats.
+  <div class="callout crit">
+    <b>Threshold calibration (REVISED Sun 5/24).</b> The original 100 °F "out of control" responder quote was empirically falsified when the interior gauge pegged ≥100 °F at 5:50 PM PDT without immediate failure. Threshold prior is now centered at Picazo's BLEVE physics estimate: <b>~213 °F</b> (MMA boiling at 1 atm), sampled N(210, 25) clipped to [160, 260]. The earlier 100 °F figure is reinterpreted as a CAUTION threshold — the line above which crews lose engineering margin — not the catastrophic-failure line.
   </div>
 </section>
 
@@ -231,11 +240,11 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
 <!-- MONTE CARLO -->
 <section id="monte-carlo">
   <h2>5 — Monte Carlo Failure Window</h2>
-  <p><b>10,000 accepted trajectories</b>, drawn via Approximate Bayesian Computation: sample the uncertain parameters (Ea, U·A, I₀, f_plate, A_cool, T_water, h_m, RH, threshold T, PSV setpoint, T₀, solar amplitude) from broad priors, integrate the ODE forward from the measured 90 °F anchor at hour 30, and reject any trajectory that <b>(a) crosses 100 °F</b> or <b>(b) would have cracked the PSV</b> at any time between hour 12 (after the Thursday auto-vent settled) and hour 62 (Sun 6 am — last public survival anchor). The PSV setpoint is back-calibrated from the Thursday vent at ~95 °F bulk, giving ~1.5 psig ± 0.6; that constraint prunes an additional ~5% of trajectories that the runaway-threshold filter alone misses — slow-creep cases that would have visibly vented but not detonated. The remaining distribution is the posterior over future failure timing, conditioned on both pieces of survival evidence.</p>
+  <p><b>~2,000 accepted trajectories</b> (out of ~825k sampled — 0.2% acceptance), drawn via Approximate Bayesian Computation. The Sun 5/24 evening paradigm shift added a third independent survival constraint: every accepted trajectory must (a) NOT cross the sampled BLEVE threshold (~210 °F, see §3) before hour 75, (b) NOT exceed the PSV setpoint in [12, 64] (no visible vent), AND (c) reach T ≥ 95 °F by hour 74 (gauge-pegged observation). The dramatic drop in acceptance — from ~38% before the paradigm shift to ~0.2% after — is itself Bayesian evidence: the observations have low probability under the priors, meaning the system is in a very narrow stable band where conditions barely satisfy all three constraints simultaneously.</p>
 
   <div class="chart-wrap">
-    <h4>Where the failure mass clusters</h4>
-    <p class="cap">Green bar = the "deluge holds" branch (now ~95%). Other bars = failure-window mass, very thin and roughly flat across the week — no single dominant near-term cluster. The largest non-hold windows are Tue and Sun morning, both under 1%. With the survival cutoff at hour 62 the previously-largest "Sat night → Sun 6 am" window has been resolved (the tank survived).</p>
+    <h4>Where the failure mass clusters (POST-PARADIGM-SHIFT)</h4>
+    <p class="cap">Green bar = "deluge holds" branch — now only ~4.5%. The remaining ~95% of the accepted-trajectory mass falls in the next 24–36 hours, with the largest window being Sun 7 PM → midnight. The model is saying: <b>conditional on the observations being correct and the priors being reasonable, BLEVE risk in the next ~12 hours is very high</b>. Read with appropriate uncertainty given the crack-vent term is approximate and acceptance rate is only 0.2%.</p>
     <canvas id="chart-mc"></canvas>
   </div>
 
@@ -246,12 +255,14 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     <div class="box"><div class="k">Median crossing</div><div class="v" id="mc-median">—</div><div class="vsm">IQR: <span id="mc-iqr">—</span></div></div>
   </div>
 
-  <div class="callout">
+  <div class="callout crit">
     <b>How the posterior evolved this session</b> (most recent first):<br>
     <ul style="margin:6px 0 0 0;font-size:14px">
-      <li><b>+ Evaporative cooling from the deluge</b> → holds 66% → ~94%. Latent heat ≈ doubles the cooling capacity. Single biggest swing.</li>
+      <li><b>+ Paradigm shift Sun 5/24 evening</b> (gauge pegged ≥100 °F, cracks discovered, BLEVE-physics threshold) → holds ~95% → <b>~4.5%</b>. Largest swing of the entire session — and in the alarming direction.</li>
+      <li><b>+ PSV non-vent constraint + survival extended to hour 62</b> → ~94% → ~96%.</li>
+      <li><b>+ Evaporative cooling from the deluge</b> → holds 66% → ~94%. Latent heat ≈ doubles cooling. Single biggest helpful swing.</li>
       <li><b>+ Audit fixes</b> (solar phase, O₂ cliff) → holds 69% → 66%.</li>
-      <li><b>+ PMMA wall fouling</b> → holds 78% → 69%, largest window flipped from Wed+ to Sat night → Sun 6 am.</li>
+      <li><b>+ PMMA wall fouling</b> → holds 78% → 69%.</li>
       <li><b>10k ABC with survival filter</b> (replacing 300k synthetic) → Sun afternoon mass dropped from synthesized 13% to 1.7%, posterior pushed later.</li>
     </ul>
     Peak-temperature distribution: P50 ≈ <span id="mc-peak50">—</span>, P90 ≈ <span id="mc-peak90">—</span>.
@@ -263,7 +274,7 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
 <!-- SENSITIVITY -->
 <section id="sensitivity">
   <h2>6 — Sensitivity Analysis</h2>
-  <p>For each uncertain parameter, hold the others at the priors and pin this one to a low/high tail (~10th vs 90th percentile of its prior). Δ in crosses% tells you how much each input drives the answer. After adding evaporative cooling, the picture changed sharply: the <b>deluge mass-transfer coefficient h_m</b> is now the dominant lever (Δ ~16 pts), and ambient <b>relative humidity</b> is #2. Both of those control how much water actually evaporates per unit time off the wetted shell. The classic levers — UA, polymer fouling, even spray-water temperature — drop in importance because evap is the bigger cooling term once it's modeled.</p>
+  <p>For each uncertain parameter, hold the others at the priors and pin this one to a low/high tail. Δ in crosses% tells you how much each input drives the answer. After the paradigm shift, the picture became extreme: <b>h_m (deluge mass-transfer coefficient) is overwhelmingly dominant at Δ ≈ 82%</b>. Low h_m (0.004 m/s) puts crosses at ~99%; high h_m (0.035 m/s) drops it to ~17%. The deluge's effectiveness as an evaporative-cooling source is essentially the whole story now. Everything else — PSV setpoint, wetted area, polymer fouling, even threshold T — is secondary at single-digit Δ. <b>If responders can make the deluge wet the shell more uniformly and at higher flow rate, that's the single intervention with leverage.</b></p>
 
   <div class="chart-wrap">
     <h4>Parameter sensitivity (tornado)</h4>
@@ -271,8 +282,8 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     <canvas id="chart-sens"></canvas>
   </div>
 
-  <div class="callout">
-    <b>Operationally:</b> the highest-leverage things crews can do are (1) <b>maximize wetted-shell coverage and water flow</b> (drives h_m up) and (2) operate when ambient air is <b>drier</b> (drives RH down, increases evaporation driving force). Both feed the latent-heat term. The model says a high-flow, well-distributed deluge in dry afternoon air is dramatically more effective than the same water in humid morning fog. Spray-water temperature, the previous top lever, drops to #3 once evap is in the model.
+  <div class="callout crit">
+    <b>Operational implication:</b> the deluge is the entire game. The model now says a 9× swing in h_m moves the failure probability from ~17% to ~99%. Maximizing wetted-shell coverage (every square inch of steel wet at all times), maximizing water flow rate, and reducing humidity around the operation are the only levers with material impact at this point. Spray-water temperature itself dropped to <b>#9</b> in the rankings — the temperature of the water matters far less than whether it's actually evaporating off the shell.
   </div>
 
   <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Sensitivity computed with <code>node scripts/sensitivity.js 1500</code>. Loaded from <code>assets/sensitivity.json</code>.</p>
@@ -294,15 +305,26 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     </div>
   </div>
 
-  <h3>Covey's "slow cure" hypothesis — now confirmed by OCFA</h3>
-  <p>Incident Commander Covey has now explicitly endorsed the slow-cure framing (LAist, Fri):</p>
+  <h3>Two competing operational hypotheses, now in tension</h3>
+  <p><b>Hypothesis A (OCFA / slow cure).</b> Covey on Friday:</p>
   <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 14px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic">
-    "One of the concepts we're thinking about is because of the heavy deluge of water and cooling it, we're allowing it to <b>cure at a slower rate and reducing its overpressure building</b>."
+    "Because of the heavy deluge of water and cooling it, we're allowing it to <b>cure at a slower rate and reducing its overpressure building</b>."
   </blockquote>
-  <p>This is the operational thesis that the current model converged on independently: polymer-skin fouling means conversion is preferentially happening at the cold wall surface where heat is being extracted; evaporative cooling absorbs the released exotherm faster than it can build pressure. The model's high "holds" fraction (~95%) is consistent with the slow-cure end-state. OCFA has also confirmed that a controlled spill (not a detonation) is the "preferred outcome" — and has placed storm-drain containment to handle that branch.</p>
+  <p>And McGovern on Sunday morning, after the crack discovery: "potentially relieving some of the pressure… a step in the right direction." OCFA's framing is that the system is in a controlled slow-cure end-state heading toward a manageable spill (the "preferred outcome"), with the cracks providing additional passive relief.</p>
 
-  <div class="callout">
-    <b>What this section now is:</b> a worked example of why first-pass synthesis from two clean arguments can be wrong when the system has positive-feedback dynamics — and how both the calibrated model and the on-scene incident commander converged on the same revised hypothesis (slow cure, eventual controlled spill) once enough new physics was in the model and enough survival evidence was in hand.
+  <p><b>Hypothesis B (Picazo / BLEVE physics).</b> USC chemistry professor Elias Picazo, the most-cited subject-matter expert across coverage, frames it more starkly:</p>
+  <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 14px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic">
+    "If you build too much heat or pressure, then you get the explosion. […] You can have fumes of toxins, flames like literal fireballs, and the explosion itself." Above MMA's boiling point (101 °C / 213 °F), "the pressure starts to increase dramatically, because the liquid phase becomes gas phase."
+  </blockquote>
+  <p>Picazo's threshold is a hard physical line. The interior gauge is now pegged at ≥100 °F (true T unknown — could be 105, could be 180). With the ~1 °F/hr historical rise rate and continued heating, the system is heading toward Picazo's BLEVE threshold; the only question is whether something stops it first (crack-vent absorbing the boiling latent heat? polymer block forming? a successful "outside the box" mitigation?).</p>
+
+  <h3>Where the calibrated model lands</h3>
+  <p>The 10k MC, conditioned on all three pieces of survival evidence (no BLEVE crossing, no PSV vent, T ≥ 95 °F by hour 74), produces a posterior that <b>strongly favors Hypothesis B in the near term</b>: 95% of accepted trajectories cross the BLEVE threshold within 24 hours of "now," with median crossing Sun ~10:41 PM PDT. The model does include crack-vent cooling (which caps T near 213 °F where it activates), but the threshold-prior is at the same temperature so the cap is barely above the threshold — trajectories tip just as the crack-vent term tries to take over.</p>
+
+  <p>The acceptance rate is 0.2%, which is itself important: most of the parameter space is INCONSISTENT with the observations. Either the model is missing physics (crack flow rate may be higher than assumed; PMMA fouling may saturate; stratification may keep bulk T below local hot-spot T) or the system really is in a narrow stable band on the edge of failure.</p>
+
+  <div class="callout warn">
+    <b>Honest read:</b> the calibrated model says near-term BLEVE risk is high. OCFA's public optimism may reflect either (a) information we don't have (closer-look inspection of the cracks, specific mitigation strategies they haven't disclosed, etc.) or (b) the same hopeful framing every incident commander gives publicly until they can't anymore. The right posture for an outside observer is: <i>take the model seriously, but keep watching the data — the next public temperature reading or visible-vent observation will break the tie between A and B fast.</i>
   </div>
 </section>
 
@@ -429,7 +451,7 @@ dT/dt       = (Q_gen − Q_cool) / (m · Cp)                    energy balance
     <div class="card">
       <h4>Snapshot stats</h4>
       <ul>
-        <li><b>News</b> — 41 articles across 15+ outlets (auto-grown by the hourly cron; includes one Anaheim CivicAlert and one California AG release)</li>
+        <li><b>News</b> — 49 articles across 16+ outlets (includes Sun-evening paradigm-shift sources: gauge-pegged readings, crack discovery, Picazo expert commentary, MIRA Safety / DA / asset-integrity theories)</li>
         <li><b>Reference</b> — 14 chemistry/technical files including the model audit, content review, and gap analysis</li>
         <li><b>Weather/environment</b> — 8 environmental files</li>
         <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>
@@ -504,10 +526,11 @@ bash scripts/refresh.sh 10000 1500
 
   <h3>Caveats</h3>
   <ul>
-    <li>The kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this aged batch. <code>A</code> is phenomenologically tuned so the baseline reproduces the observed ~1 °F/hr early rise — calibration, not first-principles.</li>
-    <li>The 100 °F runaway threshold is a verbal field estimate from responders ("approximately 100 degrees" / "out of control") — not a lab figure for this tank. MC samples it as N(100, 4) °F.</li>
-    <li><b>The current posterior is dominated by the evaporative-cooling assumption.</b> Adding latent-heat cooling shifted holds from 66% to ~94%. The mass-transfer coefficient <code>h_m</code> (sampled log-normal, median 0.012 m/s, ~10× range) is now the single most-sensitive parameter (Δ ≈ 16% over its range). If the actual deluge produces less evaporation than the prior median — e.g., because polymer-fouled steel doesn't wet well, or because the deluge isn't covering the full shell — the holds fraction collapses back toward 60–70%.</li>
-    <li>Other uncertain priors: polymer-plating fraction <code>f_plate</code> ~ N(0.35, 0.18) clipped [0.02, 0.75]; wetted area <code>A_cool</code> ~ N(40, 8) m² clipped [25, 70]; ambient RH ~ N(0.60, 0.10) clipped [0.30, 0.85]. Each captures a measurement we don't have.</li>
+    <li><b>0.2% prior-acceptance is itself a warning.</b> The MC rejects 99.8% of sampled parameter combinations because they violate one of the three survival constraints. That is Bayesian evidence the model is missing physics OR the system is genuinely in a very narrow stable band. Either interpretation deserves humility.</li>
+    <li><b>BLEVE threshold prior is centered on Picazo's BP-driven physics (~213 °F)</b> with N(210, 25) °F. This is the most defensible single anchor in the published expert commentary, but every accepted trajectory in the current MC has a threshold below 213 °F and crosses it. If the actual threshold is materially above 213 °F (because PSV/crack venting holds pressure low), the model is too pessimistic.</li>
+    <li><b>Crack-vent cooling term is NEW and approximate.</b> No measurement of crack flow rate exists; the model uses a stiff negative-feedback term scaled to give ~50 kW at T = BP. Tuning K_crack higher would soften the failure prediction substantially. This is the single largest open uncertainty in the current model.</li>
+    <li>Kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this aged batch. <code>A</code> is phenomenologically tuned so the baseline reproduces the observed ~1 °F/hr early rise — calibration, not first-principles.</li>
+    <li>The interior gauge maxes at 100 °F. Since pegging Sun 5:50 PM PDT, true bulk temperature is <b>unknown</b> — could be 105, could be 180. Model has to infer from rate-of-rise history.</li>
     <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number. Treated as a separate timeline series, not an interior anchor.</li>
     <li>Drone scans every 10 minutes are exterior proxies; <b>no new interior reading</b> has been publicly released since Fri ~10 pm (90 °F).</li>
     <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely <i>optimistic</i> on timing (real tip-over could be earlier than the bulk model predicts).</li>
@@ -525,8 +548,9 @@ bash scripts/refresh.sh 10000 1500
 <footer>
   Open-source analytical exercise. No PII, no inside information, no operational role.
   Method: lumped-parameter ODE thermal-runaway model with Arrhenius kinetics, Trommsdorff gel-effect amplifier, O₂–MEHQ cliff, PMMA wall-fouling positive feedback, evaporative cooling from the deluge, and clock-aligned diurnal solar.
-  Posterior via Approximate Bayesian Computation: 10,000 accepted trajectories conditioned on observed survival to the present.
-  Auto-refresh every hour via remote Claude routine. Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
+  Plus crack-vent latent-heat cooling near MMA boiling point (post hour 64).
+  Posterior via Approximate Bayesian Computation conditioned on three independent survival anchors (no BLEVE crossing, no PSV vent in [12, 64], gauge-pegged ≥100 °F at hour 74).
+  Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
 </footer>
 
 <!-- Chart.js via CDN -->

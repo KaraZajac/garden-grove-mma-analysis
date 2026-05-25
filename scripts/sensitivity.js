@@ -55,7 +55,8 @@ function step(s, p){
   const Qgen = p.mMonomer * (p.deltaH / 0.10012) * dX;
   const UA_e = effectiveUA(p.UA, s.X, p);
   const Q_ev = evapCooling(s.T, p);
-  const Qcool = UA_e * (s.T - p.Twater) + Q_ev - solar(s.t, p.solarAmp);
+  const Q_cr = crackVentCooling(s.T, p, s.t);
+  const Qcool = UA_e * (s.T - p.Twater) + Q_ev + Q_cr - solar(s.t, p.solarAmp);
   return { dT:(Qgen-Qcool)/(p.mMonomer*p.Cp), dX, dI };
 }
 function rk4(s, dt, p){
@@ -70,23 +71,32 @@ function rk4(s, dt, p){
           X:clamp01(s.X+(k1.dX+2*k2.dX+2*k3.dX+k4.dX)*dt/6),
           I:Math.max(0,s.I+(k1.dI+2*k2.dI+2*k3.dI+k4.dI)*dt/6)};
 }
+const PSV_GRACE_END = 12, CRACK_OBSERVED = 64, T_OBS_HOUR = 74, T_OBS_MIN_F = 95;
+const T_BP_K = 374.15;
+function crackVentCooling(T_K, p, t){
+  if (t < CRACK_OBSERVED || T_K <= T_BP_K - 5) return 0;
+  const K_crack = p.kCrack ?? 5000;
+  return Math.max(0, K_crack * (T_K - (T_BP_K - 5)));
+}
 function trajectory(p, startH, endH, surviveH, runawayF){
-  const PSV_GRACE_END = 12;
   const psv_set_Pa = P_ATM + (p.psvPsig ?? 1.5) * 6894.76;
   let s={t:startH,T:p.T0,X:0.02,I:p.I0??0.3};
-  let crossed=null, vented=null, peakF=K2F(s.T), t=startH;
+  let crossed=null, vented=null, peakF=K2F(s.T), peakF_by_obs=K2F(s.T), t=startH;
   while (t < endH){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
+    if (t <= T_OBS_HOUR && TF > peakF_by_obs) peakF_by_obs = TF;
     if (crossed === null && TF >= runawayF) crossed = t;
-    if (vented === null && t > PSV_GRACE_END && pTotalPa(s.T) > psv_set_Pa) vented = t;
-    if (TF > 250) break;
-    const dt = TF > 95 ? 5 : 60;
+    if (vented === null && t > PSV_GRACE_END && t < CRACK_OBSERVED && pTotalPa(s.T) > psv_set_Pa) vented = t;
+    if (crossed !== null && crossed < surviveH) break;
+    if (vented  !== null && vented  < surviveH) break;
+    if (TF > 280) break;
+    const dt = TF > 200 ? 5 : (TF > 130 ? 20 : 60);
     const nxt = rk4(s, dt, p);
     t += dt/3600;
     s.t = t; s.T = nxt.T; s.X = nxt.X; s.I = nxt.I;
   }
-  const ok = !((crossed !== null && crossed < surviveH) || (vented !== null && vented < surviveH));
+  const ok = !((crossed !== null && crossed < surviveH) || (vented !== null && vented < surviveH)) && (peakF_by_obs >= T_OBS_MIN_F);
   return { crossed, peakF, survivedToNow: ok };
 }
 function randn(){ let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
@@ -99,7 +109,7 @@ function sampleParams(overrides){
     Ea:       clamp(94000 + 5000 * randn(),  78000, 110000),
     deltaH:   57700,
     cInh:     2.0e-2,
-    mMonomer: 23000,
+    mMonomer: 24900,
     Cp:       1900,
     I0:       clamp(0.10 + 0.25 * Math.abs(randn()), 0.0, 0.95),
     UA:       Math.exp(Math.log(2000) + 0.45 * randn()),
@@ -117,7 +127,7 @@ function sampleParams(overrides){
   };
   return Object.assign(p, overrides);
 }
-function sampleThresholdF(){ return clamp(100 + 4*randn(), 88, 114); }
+function sampleThresholdF(){ return clamp(210 + 25*randn(), 160, 260); }
 
 // One MC pass: returns { holdsPct, crossesPct, medianCrossingHr }
 function runMC(n, overrides){
@@ -128,7 +138,7 @@ function runMC(n, overrides){
     if (attempted > n * 50) break; // safety
     const p = sampleParams(overrides);
     const thr = overrides.runawayF != null ? overrides.runawayF : sampleThresholdF();
-    const out = trajectory(p, 30, 168, 62, thr);
+    const out = trajectory(p, 30, 192, 75, thr);
     if (!out.survivedToNow) continue;
     accepted++;
     if (out.crossed === null) holds++;
@@ -156,7 +166,7 @@ const sweeps = [
   { name: 'I0 (initial inhibitor)',
     low:  { I0: 0.05 },     high: { I0: 0.60 } },
   { name: 'threshold T (runawayF)',
-    low:  { runawayF: 95 }, high: { runawayF: 108 } },
+    low:  { runawayF: 170 }, high: { runawayF: 230 } },
   { name: 'T0 (anchor temp)',
     low:  { T0: F2K(88) },  high: { T0: F2K(92) } },
   { name: 'Twater (spray water)',
