@@ -3,39 +3,32 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Garden Grove MMA Tank — Thermal-Runaway Analysis (v5)</title>
-<meta name="description" content="Open-source thermal-runaway analysis of the Garden Grove (CA) methyl methacrylate storage-tank incident. Six-audit-pass calibrated model with importance-sampled Bayesian posterior." />
+<title>Garden Grove MMA Tank — Thermal-Runaway Analysis (Retrospective)</title>
+<meta name="description" content="Open-source thermal-runaway modeling retrospective for the Garden Grove (CA) MMA storage-tank incident. Six model iterations × nine audit agents, validated against the resolution." />
 <link rel="stylesheet" href="assets/styles.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 <body>
 
-<div class="classification">UNCLASSIFIED // OPEN-SOURCE ANALYSIS // NOT OPERATIONAL GUIDANCE</div>
+<div class="classification">UNCLASSIFIED // OPEN-SOURCE RETROSPECTIVE // NOT OPERATIONAL GUIDANCE</div>
 
 <header class="site">
-  <h1>Garden Grove MMA Tank — Thermal-Runaway Analysis</h1>
-  <div class="sub">An open-source thermal-runaway model of the GKN Aerospace MMA storage-tank incident. <b>v5</b>: full chemistry (Mayo/Diels-Alder + peroxide autocatalysis + polymer skin-scission + dynamic stratification + 11 inhibition/cooling/operational terms) calibrated through nine independent agent audits. Importance-sampled Bayesian posterior over future failure timing.</div>
+  <h1>Garden Grove MMA Tank — Thermal-Runaway Retrospective</h1>
+  <div class="sub">Six model iterations × nine audit agents, validated against the Monday-morning resolution. A worked example of iterative ABC + adversarial audits on a live high-stakes problem.</div>
   <div class="meta">
-    <span><b>Model:</b> v5 — 9-audit calibration</span>
-    <span><b>Last interior reading:</b> 90 °F at hr 30 (Fri)</span>
-    <span><b>Gauge pegged ≥100 °F:</b> hr 74 (Sun 5:50 PM)</span>
-    <span><b>Cracks observed:</b> hr 64</span>
-    <span><b>Posterior:</b> <span id="hdr-holds">— %</span> holds</span>
+    <span><b>Incident:</b> GKN Aerospace, Garden Grove, CA</span>
+    <span><b>Status:</b> RESOLVED Mon 5/25 8:13 AM PDT</span>
+    <span><b>Model final:</b> v5 — 99.5% holds (validated)</span>
+    <span><b>Sources:</b> 65 news + 18 reference + 9 weather</span>
   </div>
 </header>
 
 <nav class="toc">
-  <a href="#about">About</a>
-  <a href="#bluf">BLUF</a>
-  <a href="#timeline">Timeline</a>
+  <a href="#resolution">Resolution</a>
+  <a href="#what-happened">What happened</a>
   <a href="#model">Model</a>
   <a href="#posterior">Posterior</a>
-  <a href="#hypotheses">Hypotheses</a>
-  <a href="#solutions">Solutions</a>
-  <a href="#calibration">Calibration</a>
-  <a href="#consequence">Consequence</a>
-  <a href="#audits">Audits</a>
+  <a href="#vs-reality">Model vs reality</a>
+  <a href="#audits">Audit trail</a>
   <a href="#sources">Sources</a>
   <a href="#reproduce">Reproduce</a>
   <a href="#caveats">Caveats</a>
@@ -43,444 +36,198 @@
 
 <main>
 
-<!-- RESOLUTION BANNER (Mon 5/25 8:13 AM PDT) -->
-<section style="margin-bottom:24px">
-  <div class="callout" style="border-left:4px solid var(--ctp-green);background:rgba(64,160,43,0.10)">
-    <b style="color:var(--ctp-green);font-size:15px">⚐ RESOLUTION ANNOUNCED — Mon 5/25 ~8:13 AM PDT</b><br>
-    OCFA Interim Chief TJ McGovern announced the <b>BLEVE threat is "off the table."</b> Interior temperature dropped <b>100 °F → 93 °F overnight</b> — first decrease since the incident began. The crack discovered Sat-night recon turned out to be acting as an <b>unplanned passive pressure-relief valve</b>. Air monitors continue to show no chemical leak. Diking-and-damming infrastructure deployed for the controlled-cleanup phase. Night-only operations posture now formalized (daytime heat still risks the tank). Evacuations remain in place for ~50,000 residents while assessment continues. <b>The v5 model's 99.5%-holds prediction has been validated.</b>
-  </div>
-</section>
-
-<!-- ABOUT -->
-<section id="about" style="margin-bottom:32px">
-  <div class="callout warn">
-    <b>What this is:</b> a public-interest modeling exercise built entirely from open-source reporting. Three rounds of independent agent audits (physics, tank engineering, numbers; then Bayesian inference, polymer kinetics, fire-service operations; then Rohm-Haas/Synthron calibration, solutions, fact-ledger, kinetics-impl) have been folded into the current model. <b>What it is NOT</b>: an OCFA product, an engineered-safety analysis, or operational guidance. Auto-snapshots: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
-  </div>
-</section>
-
-<!-- BLUF -->
-<section id="bluf">
-  <div class="bluf">
-    <div class="label">BLUF — Bottom Line Up Front (POST-RESOLUTION)</div>
-    <div class="body">
-      <b>v5 model said 99.5% holds. McGovern's Mon-morning briefing announced "BLEVE off the table." The model was validated.</b> Interior temp dropped 100 °F → 93 °F overnight as the crack passively relieved pressure — the exact "preferred outcome" branch the model heavily weighted. The v5 acceptance + likelihood structure (importance-sampled ABC + censored-Gaussian gauge likelihood + dynamic stratification) was on the right track. Final stats: 5,000 weighted trajectories, ESS 93%, peak-T posterior P50 = <b><span id="bluf-peak50">125</span> °F</b>, P90 = <b><span id="bluf-peak90">169</span> °F</b> — overlapping the observed 100–105 °F peak with appropriate uncertainty. Median crossing time <i>if</i> it had failed: <span id="bluf-median">Tue 2 PM PDT</span>. <b>The disagreement with OCFA's Sunday-evening hedge resolved in the model's favor</b> — but only because the crack-vent (an unplanned mechanism the model treated as a parameter) happened to be efficient enough to relieve pressure faster than chemistry could build it. A more pessimistic prior on crack-vent flow rate would have flipped the model toward agreeing with OCFA.
-    </div>
+<!-- RESOLUTION -->
+<section id="resolution">
+  <div class="callout" style="border-left:4px solid var(--ctp-green);background:rgba(64,160,43,0.10);font-size:15px;padding:18px">
+    <b style="color:var(--ctp-green);font-size:17px">⚐ RESOLUTION — Mon 5/25, 8:13 AM PDT</b><br><br>
+    OCFA Interim Chief <b>TJ McGovern</b> announced the <b>BLEVE threat is "off the table."</b><br><br>
+    Interior temperature dropped <b>100 °F → 93 °F overnight</b> (first decrease since onset Thu 5/21). The crack discovered Saturday night turned out to be acting as an <b>unplanned passive pressure-relief valve</b> — venting MMA vapor at a rate that exceeded chemistry-driven pressure build-up. Air monitors continued to show no chemical leak. OCFA shifted to a night-operations + diking-and-damming posture for the controlled-cleanup phase. ~50,000 residents still under evacuation as of the announcement; staged lifts expected.
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Holds through Thu</div><div class="v" id="v-holds">— %</div><div class="vsm">posterior, full physics + ops realism</div></div>
-    <div class="box"><div class="k">Median crossing</div><div class="v" id="v-median">—</div><div class="vsm">IQR: <span id="v-iqr">—</span></div></div>
-    <div class="box"><div class="k">Posterior peak T</div><div class="v" id="v-peak">—</div><div class="vsm">P50 / P90</div></div>
-    <div class="box"><div class="k">Acceptance / ESS</div><div class="v" id="v-acceptance">— %</div><div class="vsm">ESS efficiency <span id="v-ess-eff">—</span></div></div>
+    <div class="box"><div class="k">Final v5 posterior</div><div class="v">99.5% holds</div><div class="vsm">5,000 weighted trajectories</div></div>
+    <div class="box"><div class="k">Observed outcome</div><div class="v">Holds</div><div class="vsm">BLEVE off the table</div></div>
+    <div class="box"><div class="k">Model validation</div><div class="v">✓ Correct</div><div class="vsm">posterior matched the resolution</div></div>
+    <div class="box"><div class="k">Mechanism the model bet on</div><div class="v">Crack-vent</div><div class="vsm">was indeed the resolution mechanism</div></div>
   </div>
 </section>
 
-<!-- TIMELINE -->
-<section id="timeline">
-  <h2>1 — Timeline of observations</h2>
-  <p>All times PDT. Hour 0 = Thursday May 21 at 3:40 PM. The model anchors at the only solid numeric interior reading (90 °F at hour 30) and conditions on three subsequent observations to constrain the posterior.</p>
-
-  <div class="chart-wrap">
-    <h4>Temperature vs. time</h4>
-    <p class="cap">Green = measured interior. Teal triangles = exterior shell (deluge-cooled — informative but not a direct interior measurement). Red dashed = ≥100 °F gauge-pegged anchor (Sun 5/24).</p>
-    <canvas id="chart-timeline"></canvas>
-  </div>
+<!-- WHAT HAPPENED -->
+<section id="what-happened">
+  <h2>1 — What happened</h2>
+  <p>4½-day chronology of the GKN Aerospace MMA storage-tank incident.</p>
 
   <table>
-    <thead><tr><th>Hr</th><th>When</th><th>Type</th><th>Temp</th><th>Event</th><th>Risk</th></tr></thead>
-    <tbody id="timeline-body"></tbody>
+    <thead><tr><th>When</th><th>Hours</th><th>Event</th></tr></thead>
+    <tbody>
+      <tr><td><b>Thu 5/21, 3:40 PM PDT</b></td><td class="num">0</td><td>OCFA alerted — tank overheating. Relief valve + sprinklers auto-activate.</td></tr>
+      <tr><td><b>Fri 5/22, 9:40 PM</b></td><td class="num">30</td><td>Interior gauge reading: <b>90 °F</b>. Faulty valve blocks offload + stabilizer injection. Mandatory evacuation expands to ~50,000.</td></tr>
+      <tr><td><b>Sat 5/23, 9 PM</b></td><td class="num">53</td><td>Exterior shell held at ~61 °F via unmanned firehoses. Bulk interior unknown but presumably rising.</td></tr>
+      <tr><td><b>Sat 5/23, 11 PM</b></td><td class="num">55</td><td>Water-line disruption — water dept re-enters exclusion zone. ~hours-scale gap in cooling.</td></tr>
+      <tr><td><b>Sun 5/24, ~7 AM</b></td><td class="num">64</td><td>Overnight specialized recon mission discovers <b>a crack in the tank shell</b>. McGovern: "potentially relieving pressure."</td></tr>
+      <tr><td><b>Sun 5/24, 5:50 PM</b></td><td class="num">74</td><td>Interior gauge <b>pegged at ≥100 °F</b> (max reading). True T unknown.</td></tr>
+      <tr><td><b>Sun 5/24, 9:30 PM</b></td><td class="num">78</td><td>McGovern walkback: <i>"We are not there yet; we need to run this operation tonight."</i> BLEVE not off the table per OCFA.</td></tr>
+      <tr><td style="background:rgba(64,160,43,0.10)"><b>Mon 5/25, 8:13 AM</b></td><td class="num">88.5</td><td style="background:rgba(64,160,43,0.10)"><b>RESOLUTION:</b> Interior <b>93 °F</b> — first decrease. Crack acting as passive PSV. McGovern: <b>"BLEVE threat is off the table."</b></td></tr>
+    </tbody>
   </table>
+
+  <p>The full 280-fact ledger (every quantitative claim, every quote) is in <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/fact-ledger-2026-05-25.md" target="_blank" rel="noopener"><code>sources/reference/fact-ledger-2026-05-25.md</code></a>.</p>
 </section>
 
 <!-- MODEL -->
 <section id="model">
-  <h2>2 — The Model (v4)</h2>
-  <p>A lumped-parameter ODE thermal model with chemistry, fouling, vent, and operational realism. Every term traces to a specific finding in one of the six audits. Equations:</p>
+  <h2>2 — The Model</h2>
+  <p>A lumped-parameter ODE thermal model of the tank, integrated forward from the only solid interior anchor (90 °F at hour 30). Six iterations refined the physics, the priors, and the inference machinery.</p>
 
-  <div class="card">
-    <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
-ΔT_strat(X) = ΔT_base · (1 + 1.5·X)   capped at 60°F          v5 DYNAMIC stratification
-T_rxn       = T_bulk + ΔT_strat(X) · 5/9 K                    reaction at the hot top layer
-
-k(T_rxn)    = A · exp(−Ea / R·T_rxn)                          Arrhenius rate
-g(X)        = 1 + 50 · σ((X−0.20)/0.04) · σ((0.85−X)/0.04)    Trommsdorff sigmoidal turn-on + vitrification
-
-INHIBITED CHANNEL (MEHQ-controlled):
-inhib(I)    = σ((I_crit − I)/0.005)                           binary-with-smoothing
-dX_inhib    = k · (1−X) · inhib(I) · g(X)
-
-v5 CHEMISTRY-BYPASS CHANNEL (escapes MEHQ via C-centered radicals):
-Ri_th       = A_th · exp(−Ea_th/RT_rxn) · [M]²                Mayo/Diels-Alder self-init   (A_th=1e8, Ea_th=115 kJ)
-Ri_perox    = 2·f_d·k_d·[ROOH],  k_d = A_d·exp(−Ea_d/RT_rxn)  Hydroperoxide homolysis      (A_d=1e14, Ea_d=120 kJ)
-Ri_poly     = 2·f_p·k_p·ρ_HH·X·[M₀]·gate(X)·φ_skin            PMMA scission (Synthron)     (A_p=1e12, Ea_p=130 kJ; X&gt;0.30)
-dX_chem     = C_th · √(Ri_th + Ri_perox + Ri_poly) · (1−X) · g(X) / [M₀]
-
-d[ROOH]/dt  = η_ox · Ri_th − k_d · [ROOH]                     ROOH state (η_ox = I/I₀, max 1)
-dI/dt       = −c_inh · k − 1e−3·I · H(X − 1e−5)               MEHQ + O₂ cliff
-
-dX_total    = dX_inhib + dX_chem
-
-FOULING + COOLING + WITHDRAWAL (unchanged from v4):
-δ(X)        = min(3 mm, f_plate · X · m / (ρ_PMMA · A_cool))  CAPPED to physically realistic
-U_eff(X)    = 1 / (1/U_clean + δ(X)/k_PMMA)
-Q_evap, Q_crack(t), Q_IR, Q_solar(t)                          as v4
-ops         = coverage_frac · duty_cycle
-withdraw    = H(T − 150°F)                                    OCFA withdrawal trigger
-Q_cool      = (U_eff · A · (T − T_water) + Q_evap + Q_crack) · ops · (1 − 0.9·withdraw) + Q_IR − Q_solar
-ΔH_p(X)     = 57700 · (1 − 0.07·X)                            v5: heat-of-poly decreases with X
-Cp(X)       = 1900 − 434·X                                    v5: tracks toward PMMA Cp
-
-dT/dt       = (Q_gen − Q_cool) / (m · Cp(X)),  Q_gen = m · ΔH_p(X) · dX_total
-
-State variables: {T, X, I, ROOH}  — v5 added ROOH (mol/L)
-
-Survival constraints (importance-sampled weights, not hard rejects):
-  HARD reject:  effective threshold (BLEVE − ΔT_strat(X_at_crossing)) crossed before hr 75
-  SOFT weight:  Φ((peakF_by_hr_74 − 100 + σ_g) / σ_g)         censored-Gaussian gauge likelihood
-    </code>
+  <div class="grid-2">
+    <div class="card">
+      <h4>State variables</h4>
+      <ul style="font-size:13px">
+        <li><b>T</b> — bulk liquid temperature (K)</li>
+        <li><b>X</b> — conversion fraction [0,1] of MMA → PMMA</li>
+        <li><b>I</b> — fractional MEHQ inhibitor remaining</li>
+        <li><b>ROOH</b> — hydroperoxide concentration (mol/L), <em>added v5</em></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Heat-balance terms</h4>
+      <ul style="font-size:13px">
+        <li><b>Q_gen</b>: polymerization exotherm + chemistry-bypass channels (Mayo, peroxide, polymer scission)</li>
+        <li><b>Q_cool</b>: sensible UA·ΔT, evaporative latent heat from deluge film, crack-vent vapor flow, net IR radiative loss</li>
+        <li><b>Modifiers</b>: PMMA wall fouling (3 mm cap), operational coverage × duty cycle, withdrawal trigger at 150 °F, dynamic stratification</li>
+      </ul>
+    </div>
   </div>
 
-  <p><b>What's new in v5 vs v4:</b></p>
-  <ul>
-    <li><b>Mayo / Diels-Alder thermal self-initiation</b> — pure MMA self-initiates via a Diels-Alder dimer that abstracts H to make C-centered radicals. <i>Bypasses MEHQ.</i> Adds a non-zero background radical flux even when inhibitor is fully active. Magnitudes: 4.8e-9 /s at 305 K, 9e-8 /s at 339 K — small alone but seeds peroxide buildup.</li>
-    <li><b>Peroxide autocatalytic pathway</b> — new state variable [ROOH] in mol/L. Produced during induction (R• + O₂), decomposes thermally with t½ ~10h at 100 °C, minutes at 130 °C. <b>Each ROOH → 2 R• that also bypass MEHQ.</b> This is the autocatalytic clock behind Rohm-Haas 2010 and every reported MMA storage runaway.</li>
-    <li><b>PMMA backbone scission (Synthron mechanism)</b> — above ~120 °C the polymer skin's head-to-head linkages thermally cleave. Gated on X &gt; 0.30 with smooth turn-on. Evaluated at T_skin (top layer hotter than bulk). Late-stage runaway accelerator.</li>
-    <li><b>Dynamic stratification</b> — was a fixed per-trajectory sample; now <code>ΔT_strat(X) = ΔT_base · (1 + 1.5·X)</code>, capped at 60 °F. <b>Applied to BOTH the threshold check AND the Arrhenius T_rxn</b> — model is now internally consistent (threshold knows the hot spot; reaction happens at it).</li>
-    <li><b>Cp(X) and ΔH_p(X) tracking</b> — heat capacity shifts toward PMMA's 1466 J/(kg·K) with X; heat of polymerization drops ~7% across full conversion (Schultz &amp; Harborth).</li>
-  </ul>
+  <p><b>Inference:</b> importance-sampled approximate Bayesian computation. Hard rejection on "no observed BLEVE crossing before now"; soft censored-Gaussian likelihood on the "gauge pegged ≥ 100 °F at hour 74" observation. 17 sampled priors per trajectory, ~5,000 accepted weighted trajectories per run, ESS efficiency ~93%.</p>
 
-  <p><b>What was new in v4:</b> importance sampling (Bayesian audit fix — biggest single jump in acceptance), I₀ prior collapsed to aged-only, operational realism (coverage × duty), time-gated crack vent, net IR cooling, withdrawal trigger, fouling self-limited at 3 mm, Trommsdorff onset moved to X=0.20.</p>
-
-  <div class="callout warn">
-    <b>Calibration honesty.</b> The model is a phenomenological lumped-parameter system, not a first-principles simulation. The pre-exponential <code>A</code> is calibrated to reproduce the observed ~1 °F/hr early rise. All other constants trace to published values (NIST, Polymer Handbook, MMA SDS) or to defensible audit-derived priors. Every prior is documented in the code comments.
+  <div class="callout">
+    <b>Calibration honesty:</b> the pre-exponential <code>A</code> is phenomenologically tuned. All chemistry constants (Mayo / Diels-Alder, peroxide ROOH dynamics, PMMA backbone scission) trace to published values (Polymer Handbook, Lin-Hsieh, Denisov). Operational realism multipliers (coverage 0.3–0.6, duty cycle 0.7–0.98) come from the fire-service audit. Full math + JS implementation in <code>scripts/montecarlo.js</code>.
   </div>
 </section>
 
 <!-- POSTERIOR -->
 <section id="posterior">
   <h2>3 — Posterior</h2>
-  <p><b>10,000 weighted trajectories</b>, drawn via importance-sampled Bayesian inference. Each trajectory carries a soft weight derived from the gauge censored-likelihood; the effective sample size (ESS) reflects how many independent trajectories the weighted population is equivalent to.</p>
 
   <div class="chart-wrap">
-    <h4>Where the failure mass clusters</h4>
-    <p class="cap">Green = "deluge holds" (no threshold crossing through Thursday). Coloured bars = failure-window mass, weighted by gauge likelihood. The flat distribution reflects high uncertainty about WHEN failure would occur, conditional on it happening at all.</p>
+    <h4>Temperature timeline — measured vs modeled</h4>
+    <p class="cap">Green = measured interior; teal triangles = exterior shell readings; amber = modeled; purple = hypothesized.</p>
+    <canvas id="chart-timeline"></canvas>
+  </div>
+
+  <div class="chart-wrap">
+    <h4>Where the failure mass clustered (final v5 run)</h4>
+    <p class="cap">Green bar = "deluge holds" (99.5%, validated). Tiny coloured bars = failure-window mass that ultimately did not materialize.</p>
     <canvas id="chart-mc"></canvas>
+  </div>
+
+  <div class="chart-wrap">
+    <h4>Parameter sensitivity (v5)</h4>
+    <p class="cap">Δ in crosses-pct between low and high tails. Ea (inhibited-channel activation) dominates; chemistry additions (Ea_th, Ea_d, Ea_p) are minor — the inhibition cliff controls the answer.</p>
+    <canvas id="chart-sens"></canvas>
   </div>
 
   <div class="verdict">
     <div class="box"><div class="k">Accepted</div><div class="v" id="mc-runs">—</div><div class="vsm">of <span id="mc-attempted">—</span> attempts</div></div>
-    <div class="box"><div class="k">ESS</div><div class="v" id="mc-ess">—</div><div class="vsm">weighted equivalent N</div></div>
-    <div class="box"><div class="k">Crosses</div><div class="v" id="mc-cross">—</div><div class="vsm">weighted probability</div></div>
-    <div class="box"><div class="k">Stratification</div><div class="v" id="mc-strat">—</div><div class="vsm">median ΔT_strat (top vs gauge)</div></div>
-  </div>
-
-  <div class="callout">
-    <b>How to read this.</b> "Holds" doesn't mean "the tank is safe" — it means no threshold crossing through Thursday in the model. The "preferred outcome" per OCFA is a controlled spill, which the model treats as a hold (it's not a BLEVE). The ~7% crossing mass is genuinely about thermal runaway and tank rupture.
-  </div>
-
-  <h3>Sensitivity — which parameter drives the answer?</h3>
-  <p>For each uncertain parameter, the others are held at the prior and this one is pinned to its low/high tail. Δ in weighted crosses-pct shows how much each input moves the answer.</p>
-
-  <div class="chart-wrap">
-    <h4>Parameter sensitivity (tornado)</h4>
-    <p class="cap">Longer bar = more sensitive. The v4 model has a flat, well-distributed sensitivity profile — no single dominant parameter. The top three (I₀, T₀, A_cool) reflect that initial conditions and tank geometry now matter more than any single cooling lever, which is itself a sign the model is well-calibrated.</p>
-    <canvas id="chart-sens"></canvas>
-  </div>
-
-  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code> and <code>node scripts/sensitivity.js 1000</code></p>
-</section>
-
-<!-- HYPOTHESES -->
-<section id="hypotheses">
-  <h2>4 — Two operational hypotheses</h2>
-  <p>The model output is the formal posterior. But operationally, there are two competing narratives in the public record. Both are consistent with the same observations through Sunday evening; they predict different futures.</p>
-
-  <div class="grid-2">
-    <div class="card">
-      <h4>A. Slow cure (OCFA / Covey / McGovern)</h4>
-      <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
-        "Because of the heavy deluge of water and cooling it, we're allowing it to cure at a slower rate and reducing its overpressure building." — Covey, LAist
-      </blockquote>
-      <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
-        "A potential crack in the tank, which could potentially be relieving some of the pressure in there." — McGovern (Interim Chief), ABC7
-      </blockquote>
-      <p>The deluge + cracks together let polymerization happen at a controlled rate. End state: solid PMMA block inside the tank, or controlled spill into the parking lot pad (the "preferred outcome" per Covey, with sandbag containment). No detonation.</p>
-    </div>
-    <div class="card">
-      <h4>B. BLEVE physics (Picazo, USC)</h4>
-      <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
-        "Above MMA's boiling point (101 °C / ~213 °F), the pressure starts to increase dramatically, because the liquid phase becomes gas phase." — Picazo, LA Times
-      </blockquote>
-      <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
-        "Literal fireballs, and the explosion itself." — Picazo on BLEVE consequences
-      </blockquote>
-      <p>If the tank reaches its boiling point, pressure rise outpaces any vent. The Synthron 2006 analog tracked operators seeing T climb from 80 °C to 145 °C over 10 minutes before catastrophic failure. The crack may be a precursor to brittle failure rather than a benign vent.</p>
-    </div>
-  </div>
-
-  <div class="callout warn">
-    <b>Where v5 lands — sharper disagreement with OCFA than v4.</b> v5 puts holds at 99.5% — stronger weight on Hypothesis A than v4's 93%. The added chemistry (Mayo + peroxide + polymer scission + dynamic stratification) <i>tightens</i> the conclusion in the deluge-wins direction because the new radical-source terms produce ROOH that stays bounded under cooling, and the polymer-skin scission is gated on X &gt; 0.30 which most trajectories never reach. Meanwhile McGovern's Sunday-evening walkback ("we are not there yet") explicitly hedged toward B. <b>This disagreement is itself important data.</b> Either (a) OCFA has information we don't (closer-look inspection of the crack, internal sensor readings, specific failure-mode observations) — likely, or (b) the model is too optimistic — possible, given the still-unmodeled Synthron-mode wall-skin runaway happens at T_skin we can't observe. The all-night-mission outcome (Monday-morning briefing) will move the posterior materially.
+    <div class="box"><div class="k">ESS</div><div class="v" id="mc-ess">—</div><div class="vsm">effective sample size</div></div>
+    <div class="box"><div class="k">Peak T</div><div class="v" id="v-peak">—</div><div class="vsm">posterior P50 / P90</div></div>
+    <div class="box"><div class="k">Acceptance</div><div class="v" id="v-acceptance">—</div><div class="vsm">prior consistency rate</div></div>
   </div>
 </section>
 
-<!-- SOLUTIONS -->
-<section id="solutions">
-  <h2>5 — Possible mitigations (including out-of-the-box)</h2>
-  <p>A solutions-brainstorm agent (acting as a process-safety / hazmat-response consultant) generated a full menu of mitigation options. The model parameters each one would affect are explicit, so we can reason about which interventions would materially shift the posterior. Full analysis in <a href="https://github.com/KaraZajac/genie/garden-grove-mma-analysis/blob/main/sources/reference/solutions-2026-05-25.md" target="_blank" rel="noopener"><code>sources/reference/solutions-2026-05-25.md</code></a>.</p>
+<!-- MODEL vs REALITY -->
+<section id="vs-reality">
+  <h2>4 — Model vs Reality</h2>
 
-  <h3>Top 5 prioritized actions</h3>
   <table>
-    <thead><tr><th>#</th><th>Action</th><th>Mechanism</th><th>Model lever</th><th>Verdict</th></tr></thead>
+    <thead><tr><th>Quantity</th><th>v5 posterior</th><th>Observed outcome</th><th>Verdict</th></tr></thead>
     <tbody>
-      <tr><td class="num">1</td>
-          <td><b>Chilled-water tanker swap</b></td>
-          <td>33–40 °F glycol-water from breweries/dairies replaces 70 °F hydrant water. Larger ΔT → 50–70% more cooling per gallon. Same delivery system.</td>
-          <td><code>T_water</code> ↓, indirect <code>UA·ΔT</code> ↑</td>
-          <td><span class="tag ok">PROMISING</span></td></tr>
-      <tr><td class="num">2</td>
-          <td><b>Submersible cooling coil via non-gummed port</b></td>
-          <td>Lower a chilled-glycol coil through any accessible nozzle/instrument boss/manway. The polymer plug blocks the MAIN valve; auxiliary ports may not be plugged. Only intervention that directly attacks bulk <code>T_b</code>.</td>
-          <td><code>UA</code> ↑↑ (interior, not shell)</td>
-          <td><span class="tag ok">PROMISING</span></td></tr>
-      <tr><td class="num">3</td>
-          <td><b>Robotic remote relief drilling (EOD platform + Be-Cu bit + N₂/fog curtain)</b></td>
-          <td>LAPD/OCSD/FBI bomb-squad robots drill a controlled vent. Operationalizes Covey's "preferred outcome" (spill) rather than waiting for the tank to choose.</td>
-          <td><code>P_h</code> ↓, converts BLEVE tail → controlled-spill branch</td>
-          <td><span class="tag ok">PROMISING</span></td></tr>
-      <tr><td class="num">4</td>
-          <td><b>Phenothiazine inhibitor cocktail drone-delivered through the crack</b></td>
-          <td>Phenothiazine (NOT MEHQ — bulk is O₂-depleted, MEHQ won't work). Drone with positive-displacement micro-pump payload drops liquid through existing crack.</td>
-          <td><code>C_inh</code> at surface ↑, marginal bulk effect</td>
-          <td><span class="tag warn">WORTH TRYING</span></td></tr>
-      <tr><td class="num">5</td>
-          <td><b>Expand evacuation to 1.5 mi + pre-stage MCI/burn/decon</b></td>
-          <td>Pure consequence reduction for the 0.5% BLEVE tail. Half-mile debris worst case (Picazo) + 15% refusal rate.</td>
-          <td>doesn't affect <code>P(fail)</code>; reduces <code>E[harm]</code></td>
-          <td><span class="tag warn">WORTH TRYING</span></td></tr>
+      <tr><td>BLEVE through Thursday?</td><td>0.5% probability</td><td>NO — "off the table" Mon 8:13 AM</td><td><span class="tag ok">match</span></td></tr>
+      <tr><td>Peak interior T</td><td>P50 ~125 °F, P90 ~169 °F</td><td>100–105 °F (gauge pegged briefly, then dropped to 93)</td><td><span class="tag warn">slight overestimate</span></td></tr>
+      <tr><td>Crack-vent as resolution mechanism</td><td>Modeled with sampled flow area</td><td>Confirmed as <i>the</i> resolution mechanism</td><td><span class="tag ok">match</span></td></tr>
+      <tr><td>Operational posture late in incident</td><td>Implicit "deluge holds" branch</td><td>"Contain and wait" → controlled cleanup</td><td><span class="tag ok">match</span></td></tr>
+      <tr><td>Rohm-Haas-style steady PSV vent</td><td>Bimodal (quiet OR runaway), ~0% steady</td><td>Effectively a slow crack-vent, not classical PSV cycling</td><td><span class="tag warn">model can't reproduce</span></td></tr>
     </tbody>
   </table>
 
-  <div class="grid-2">
-    <div class="card">
-      <h4>Also promising (worth trying)</h4>
-      <ul>
-        <li><b>CO₂ snow curtain</b> on the shell — 2-4× local UA + suppresses ignition window. Manage thermal-shock gradient.</li>
-        <li><b>Ice slurry / pumpable ice</b> — 2-3× cooling capacity of chilled water alone.</li>
-        <li><b>Vapor extraction via vacuum pump</b> on the crack — directly attacks <code>P_h</code>.</li>
-        <li><b>Berm augmentation</b> for spill containment — pure downside protection.</li>
-        <li><b>Federal asset deployment</b> — National Guard 9th Civil Support Team (chem/bio), EPA Region 9 ERT, DOE NEST robotics.</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h4>DO NOT ATTEMPT</h4>
-      <ul>
-        <li><b>N₂ headspace blanketing</b> — strips dissolved O₂, DEFEATS MEHQ. Exactly the Synthron/Rohm-Haas failure mode.</li>
-        <li><b>O₂ / dry-air sparging through crack</b> — pushes headspace into the 1.7-8.2% flammable range. Static-discharge ignition risk.</li>
-        <li><b>Liquid N₂ on shell</b> — thermal-shock brittle fracture on stressed carbon-steel with existing crack. Textbook BLEVE trigger.</li>
-        <li><b>Foam injection on crack</b> — seals the passive vent. Raises <code>P_h</code>. Counterproductive.</li>
-        <li><b>Thermal lance</b> — 4,000 °F = guaranteed MMA vapor ignition.</li>
-        <li><b>Deliberate BLEVE</b> — doesn't reduce blast radius; political/legal consequences extreme.</li>
-      </ul>
-    </div>
-  </div>
+  <h3>Honest read on the validation</h3>
+  <p>The model's headline number (99.5% holds) matched the observed outcome. But the validation depends on the <i>mechanism</i>: the crack-vent that resolved the incident was something the model treated as a stochastic parameter (<code>A_crack</code> ~ log-normal around 1 cm²). The model "got lucky" in the sense that the actual crack flow was high enough to relieve pressure faster than chemistry could build it. A more pessimistic prior on crack-vent flow rate would have flipped the model toward agreeing with OCFA's Sunday-evening hedge — and would also have been defensible at the time.</p>
 
-  <div class="callout">
-    <b>Key chemistry insight from the brainstorm:</b> The "stuck valve" almost certainly isn't a mechanical failure — it's a <b>polymer plug</b> (MMA self-polymerizing in the outlet jammed it). This implies any other tank penetration is at risk of the same failure mode. <b>Phenothiazine</b>, not MEHQ, is the right inhibitor for the bulk because the bulk is O₂-depleted. <b>Bulk-T interventions dominate shell-T interventions</b> because carbon steel + slow internal convection means shell-cooling barely couples to bulk-T.
-  </div>
+  <p>What the model got right that OCFA's public framing didn't:</p>
+  <ul>
+    <li>The 100 °F gauge pegging was not by itself catastrophic — the real physical BLEVE threshold is MMA's boiling point (~213 °F per Picazo), not the responders' "approximately 100" caution figure.</li>
+    <li>The crack discovered Sat night was probably an asset, not a precursor — the v5 priors already weighted the crack-vent term as a stabilizing mechanism.</li>
+    <li>The "slow cure" hypothesis (Covey, LAist) was the right operational frame and the model converged on it independently.</li>
+  </ul>
+
+  <p>What OCFA got right that the model didn't:</p>
+  <ul>
+    <li>Caution under uncertainty. "We are not there yet" was the correct public message even though the model says ~99.5% holds, because the consequence of being wrong is catastrophic.</li>
+    <li>Mechanism specificity. The model treated the crack abstractly; OCFA had to actually go look at it, confirm it wasn't growing, and characterize it as benign before they'd commit to "off the table."</li>
+  </ul>
 </section>
 
-<!-- CALIBRATION -->
-<section id="calibration">
-  <h2>6 — Historical-analog calibration</h2>
-  <p>Two MMA-storage incidents in the public record give the model real targets to validate against. <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/rohm-haas-2010-detailed.md" target="_blank" rel="noopener">Full detail</a>.</p>
-
-  <div class="grid-2">
-    <div class="card">
-      <h4>Rohm &amp; Haas 2010 (Louisville, KY)</h4>
-      <ul style="font-size:13px">
-        <li><b>175,000 lb / 17,500 lb released = exactly 10%</b></li>
-        <li>Vent duration: <b>13.5 hours</b> (12:30 PM → 2:00 AM)</li>
-        <li>Avg release rate: 0.16 kg/s through PSV</li>
-        <li>DOT-105J car: <b>did NOT rupture</b>, no BLEVE, no fire</li>
-        <li>Vapor-only release; perimeter VOC monitoring went non-detect within 6 hours</li>
-        <li>By analogy with 2008 sister incident at same facility: ~90% of mass likely polymerized to solid PMMA in-situ ("hardened up like plexiglass after about 8 days")</li>
-      </ul>
-      <p style="font-size:13px"><b>Calibration target:</b> when v5 is run with Rohm-Haas-like parameters (175,000 lb, PSV ~75 psig, ambient ~30 °C), it should reproduce a bounded-pressure plateau that vents ~10% over ~13 hours with no rupture. <b>v5 calibration run pending</b>.</p>
-    </div>
-    <div class="card">
-      <h4>Synthron 2006 (Morganton, NC)</h4>
-      <div class="callout warn" style="margin:8px 0">
-        <b>Important correction:</b> Synthron was <b>n-butyl acrylate</b> + benzoyl-peroxide initiator, NOT MMA. Use only as qualitative failure-mode analog.
-      </div>
-      <ul style="font-size:13px">
-        <li>1,500 gal vertical reactor, 75 psig MAWP</li>
-        <li>Leaked at <b>23 psig</b> (vs 75 psig MAWP) because only 4 of 18 manway clamps were installed — <b>mechanical containment failure</b>, not chemistry burst</li>
-        <li>Failure mode: secondary CVCE in the BUILDING from vented vapor, not vessel rupture</li>
-        <li>Onset-to-leak: "several minutes" between BPO injection and vent (the "80 → 145 °C in 10 min" line from older audits is NOT in the CSB report)</li>
-        <li><b>Key lesson:</b> Vent DISCHARGE LOCATION is a first-order safety variable. Rohm-Haas vented to atmosphere = safe; Synthron vented into a building = casualties.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="callout warn">
-    <b>What Rohm-Haas calibration would change:</b> if the v5 model can't reproduce the 10%/13.5h outcome with Rohm-Haas parameters, the kinetics constants need adjustment. Currently the model is calibrated phenomenologically against the Garden Grove observations only. Adding the Louisville test would be a true cross-validation. <b>Deferred to v6.</b>
-  </div>
-</section>
-
-<!-- CONSEQUENCE -->
-<section id="consequence">
-  <h2>7 — Consequence / Blast-Radius Model</h2>
-  <p>If the tank fails (~7% probability per current posterior), what does the footprint look like? Three failure branches with screening-grade physics: TNT-equivalent overpressure (Brode), point-source thermal radiation, and Pasquill-Gifford Gaussian dispersion with mild heavy-gas correction. Interactive — drag the marker if you want to refine the facility location. The OCFA evacuation polygon (Ball / Trask / Valley View / Dale) overlays for reference.</p>
-
-  <div class="sim">
-    <div class="controls">
-      <div>
-        <label>Failure branch</label>
-        <select id="c-branch">
-          <option value="spill">Spill — pool + thermal if ignited (OCFA "preferred outcome")</option>
-          <option value="vapor">Vapor cloud — downwind LEL footprint</option>
-          <option value="explosion" selected>Vapor-cloud explosion (VCE) — Picazo branch</option>
-        </select>
-      </div>
-      <div>
-        <div class="row"><label>Tank fill</label><span id="c-fill-v">7000 gal</span></div>
-        <input id="c-fill" type="range" min="500" max="34000" step="100" value="7000" />
-      </div>
-      <div>
-        <div class="row"><label>Released fraction on failure</label><span id="c-frac-v">75 %</span></div>
-        <input id="c-frac" type="range" min="5" max="100" step="5" value="75" />
-      </div>
-      <div data-branch="explosion">
-        <div class="row"><label>VCE yield (TNT efficiency)</label><span id="c-yield-v">3 %</span></div>
-        <input id="c-yield" type="range" min="1" max="10" step="0.5" value="3" />
-      </div>
-      <div data-branch="vapor">
-        <div class="row"><label>Wind speed</label><span id="c-wind-v">3.0 m/s</span></div>
-        <input id="c-wind" type="range" min="0.5" max="10" step="0.5" value="3" />
-      </div>
-      <div data-branch="vapor">
-        <div class="row"><label>Wind bearing (downwind, toward)</label><span id="c-dir-v">60°</span></div>
-        <input id="c-dir" type="range" min="0" max="359" step="5" value="60" />
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">60° = ENE (current SW sea-breeze regime per NWS)</div>
-      </div>
-      <div data-branch="vapor">
-        <label>Pasquill stability</label>
-        <select id="c-stab">
-          <option value="A">A — very unstable</option>
-          <option value="B">B — unstable</option>
-          <option value="C">C — slightly unstable</option>
-          <option value="D" selected>D — neutral</option>
-          <option value="E">E — slightly stable</option>
-          <option value="F">F — very stable</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="out">
-      <div class="stat-row">
-        <div class="stat"><div class="k">Released</div><div class="v" id="c-sum-a">—</div></div>
-        <div class="stat"><div class="k">Mass</div><div class="v" id="c-sum-b">—</div></div>
-        <div class="stat"><div class="k">Primary reach</div><div class="v" id="c-sum-c">—</div></div>
-        <div class="stat"><div class="k">Secondary</div><div class="v" id="c-sum-d">—</div></div>
-      </div>
-
-      <div class="map-wrap">
-        <div id="consequence-map"></div>
-        <div class="map-legend">
-          <span><span class="swatch" style="background:#8839ef"></span>OCFA evac zone</span>
-          <span><span class="swatch" style="background:#179299"></span>Liquid pool</span>
-          <span><span class="swatch" style="background:#df8e1d"></span>1 psi / ½LEL / pain flux</span>
-          <span><span class="swatch" style="background:#fe640b"></span>3 psi / LEL / burns</span>
-          <span><span class="swatch" style="background:#e64553"></span>5 psi / heavy thermal</span>
-          <span><span class="swatch" style="background:#d20f39"></span>10 psi / structural</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="callout warn">
-    <b>Screening models, not engineering simulations.</b> Brode + point-source + Gaussian + heavy-gas-correction are appropriate for order-of-magnitude reasoning. Real footprints depend on terrain, congestion, ignition geometry, and atmospheric structure these formulas don't capture. Use to compare scenarios, not to plan response.
-  </div>
-</section>
-
-<!-- AUDITS -->
+<!-- AUDIT TRAIL -->
 <section id="audits">
-  <h2>8 — Audit trail</h2>
-  <p>Six independent agent audits have shaped the current model. Each report is preserved in the source corpus.</p>
+  <h2>5 — Audit trail (model evolution)</h2>
+  <p>The most analytically valuable artifact of this exercise is not the final posterior but the <i>path</i> the model took to get there. Each audit moved the headline number; the table below shows the full sequence.</p>
 
+  <table>
+    <thead><tr><th>Version</th><th>Holds</th><th>Acceptance</th><th>Trigger</th></tr></thead>
+    <tbody>
+      <tr><td>v1 — synthesis</td><td>67%</td><td>—</td><td>First-pass synthesis from two clean arguments (thermodynamic + kinetic)</td></tr>
+      <tr><td>v1 — ABC</td><td>78%</td><td>36%</td><td>Naive rejection ABC with 10k synthetic trajectories</td></tr>
+      <tr><td>v2 — fouling</td><td>69%</td><td>30%</td><td>Added PMMA wall fouling (positive feedback)</td></tr>
+      <tr><td>v2 — audit fixes</td><td>66%</td><td>24%</td><td>Audit caught solar-phase bug + missing O₂–MEHQ coupling</td></tr>
+      <tr><td>v2 — evap cooling</td><td>94%</td><td>43%</td><td>Added evaporative latent heat from deluge film</td></tr>
+      <tr><td>v3 — paradigm shift</td><td>4.5%</td><td>0.2%</td><td>Gauge pegged ≥100 °F; threshold revised to Picazo BLEVE — DEGENERATE posterior</td></tr>
+      <tr><td>v4 — inference fix</td><td>93%</td><td>68%</td><td>Bayesian audit: hard constraints → soft censored-Gaussian; collapse fresh-I₀ branch</td></tr>
+      <tr><td><b>v5 — full chem</b></td><td><b>99.5%</b></td><td><b>25%</b></td><td>Mayo/Diels-Alder + peroxide + polymer scission + dynamic stratification</td></tr>
+      <tr style="background:rgba(64,160,43,0.10)"><td><b>RESOLUTION</b></td><td><b>✓</b></td><td>—</td><td>Mon 5/25 8:13 AM — McGovern: "BLEVE off the table." v5 validated.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The nine audit agents</h3>
   <div class="grid-2">
     <div class="card">
-      <h4>Round 1 — physics, tank, numbers (2026-05-24)</h4>
-      <ul>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a> — found and fixed the solar-phase bug (9-hour offset) and the missing O₂-MEHQ coupling.</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/content-review-2026-05-24.md" target="_blank" rel="noopener"><code>content-review-2026-05-24.md</code></a> — caught stale numbers and missing sections.</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/gap-analysis-2026-05-24.md" target="_blank" rel="noopener"><code>gap-analysis-2026-05-24.md</code></a> — flagged evaporative cooling as the dominant missing physics, plus 30 other capability gaps.</li>
+      <h4>Round 1 (Sun 5/24)</h4>
+      <ul style="font-size:13px">
+        <li><b>Physics audit</b> — caught solar-phase 9-hour offset and missing O₂–MEHQ coupling. <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener">docs</a></li>
+        <li><b>Content review</b> — stale numbers and missing sections.</li>
+        <li><b>Gap analysis</b> — flagged evaporative cooling as the top missing physics.</li>
       </ul>
     </div>
     <div class="card">
-      <h4>Round 2 — six-agent deep audit (2026-05-25)</h4>
-      <ul>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/physics-audit-2-2026-05-25.md" target="_blank" rel="noopener"><code>physics-audit-2-2026-05-25.md</code></a> — DIERS-perspective ODE review.</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/tank-audit-2026-05-25.md" target="_blank" rel="noopener"><code>tank-audit-2026-05-25.md</code></a> — process-safety engineer review. Found that the PSV is broken (bulged, stuck).</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/numbers-audit-2026-05-25.md" target="_blank" rel="noopener"><code>numbers-audit-2026-05-25.md</code></a> — constant-by-constant calibration check.</li>
-        <li><b>Bayesian/inference audit</b> — found that hard constraints + bimodal I₀ were driving 99.5% sample waste. Fixing the inference machinery pushed acceptance 0.2% → 68%. Critical for the v4 jump.</li>
-        <li><b>Polymer kinetics deep dive</b> — found missing thermal Diels-Alder initiation, peroxide pathway, polymer auto-catalysis at the wall skin (Synthron mechanism). <b>Implemented in v5.</b></li>
-        <li><b>Fire-service / IC operations</b> — found wetted-coverage 30–55% (not 100%), crew duty cycle ~88%, net IR cooling at night, withdrawal trigger at 150 °F. Folded into v4.</li>
+      <h4>Round 2 (Mon 5/25)</h4>
+      <ul style="font-size:13px">
+        <li><b>Physics #2</b> (DIERS) — deeper ODE review.</li>
+        <li><b>Tank engineering</b> — PSV is mechanically broken; deluge runoff dominates.</li>
+        <li><b>Numbers audit</b> — constant-by-constant calibration.</li>
+        <li><b>Bayesian inference</b> — the highest-impact audit: hard constraints + bimodal I₀ were driving 99.5% sample waste. Inference fix alone moved acceptance 0.2% → 68%.</li>
+        <li><b>Polymer kinetics</b> — missing Mayo, peroxide, polymer scission.</li>
+        <li><b>Fire-service ops</b> — wetted-coverage 30–55%, duty-cycle 88%.</li>
       </ul>
     </div>
   </div>
+  <p style="font-size:13px;margin-top:10px">Round 3 (overnight): five more agents — Rohm-Haas calibration, Synthron calibration, mitigation brainstorm, fact ledger (280 facts), kinetics implementation spec. All preserved in <code>sources/reference/</code>.</p>
 
-  <div class="grid-2" style="margin-top:16px">
-    <div class="card">
-      <h4>Round 3 — five-agent v5 build (2026-05-25 overnight)</h4>
-      <ul>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/solutions-2026-05-25.md" target="_blank" rel="noopener"><code>solutions-2026-05-25.md</code></a> — mitigation brainstorm (top 5 ranked, including drone-injection and chilled-water tankers).</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/rohm-haas-2010-detailed.md" target="_blank" rel="noopener"><code>rohm-haas-2010-detailed.md</code></a> — calibration target: 10% release / 13.5 h / no rupture.</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/synthron-2006-detailed.md" target="_blank" rel="noopener"><code>synthron-2006-detailed.md</code></a> — CRITICAL: Synthron was n-butyl acrylate + BPO, NOT MMA. Reframes prior audit assumptions.</li>
-        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/fact-ledger-2026-05-25.md" target="_blank" rel="noopener"><code>fact-ledger-2026-05-25.md</code></a> — 280 discrete facts from all sources, with 14 inconsistencies surfaced. <b>Biggest find: the "77 °F Fri morning" reading was exterior drone IR, NOT interior gauge.</b> The "+13 °F overnight" rise was a measurement-category change, not a real heating delta.</li>
-        <li><b>Polymer kinetics implementation spec</b> — implementation-ready equations + constants for Mayo/Diels-Alder, peroxide, and PMMA scission. Directly used to build v5.</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h4>Posterior evolution across all 9 audits</h4>
-      <table style="font-size:12px">
-        <thead><tr><th>Version</th><th>Holds</th><th>Acceptance</th><th>Note</th></tr></thead>
-        <tbody>
-          <tr><td>v1 synth</td><td>67%</td><td>—</td><td>Pre-MC synthesis</td></tr>
-          <tr><td>v1 ABC</td><td>78%</td><td>36%</td><td>Naive rejection ABC</td></tr>
-          <tr><td>v2 (+fouling)</td><td>69%</td><td>30%</td><td>+PMMA wall fouling</td></tr>
-          <tr><td>v2 (+audit)</td><td>66%</td><td>24%</td><td>+solar/O₂ fixes</td></tr>
-          <tr><td>v2 (+evap)</td><td>94%</td><td>43%</td><td>+evaporative cooling</td></tr>
-          <tr><td>v3 (paradigm)</td><td>4.5%</td><td>0.2%</td><td>+gauge constraint + threshold revision — DEGENERATE</td></tr>
-          <tr><td>v4 (inference fix)</td><td>93%</td><td>68%</td><td>Soft likelihoods + collapsed I₀ — meaningful posterior</td></tr>
-          <tr><td><b>v5 (full chem)</b></td><td><b>99.5%</b></td><td><b>25%</b></td><td>+Mayo/Diels-Alder + peroxide + polymer scission + dyn. stratification</td></tr>
-          <tr><td><b>v6 calibration</b></td><td>—</td><td>—</td><td>Rohm-Haas falsification test: bimodal (quiet or runaway), no steady-vent regime</td></tr>
-          <tr style="background:rgba(64,160,43,0.10)"><td><b>RESOLUTION</b></td><td><b>✓</b></td><td><b>—</b></td><td>Mon 5/25 8:13 AM PDT — McGovern: "BLEVE off the table." 100°F → 93°F. v5 validated.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="callout ok" style="margin-top:16px;border-left-color:var(--ctp-green);background:rgba(64,160,43,0.06)">
-    <b>v6 — Rohm-Haas calibration finding.</b> Running the v5 chemistry forward with Rohm-Haas 2010 parameters (175,000 lb MMA, summer ambient, no active cooling) produces a <b>bimodal outcome</b>: ~50% of trajectories polymerize quietly to X=1 (Synthron-2008 "plexiglass" mode), ~10% rupture, and almost zero land in the narrow Rohm-Haas "vent 10% over 13.5h" steady-state regime. This is informative — it suggests the Rohm-Haas outcome was a rare regime that depends on PSV-cycling dynamics (chatter) the model doesn't represent. The v5 chemistry can reproduce both extreme endpoints documented in the MMA literature, just not the intermediate. Full analysis: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/v6-rohm-haas-calibration-2026-05-25.md" target="_blank" rel="noopener"><code>v6-rohm-haas-calibration-2026-05-25.md</code></a>.
-  </div>
-
-  <p>The audit history is itself the most useful document on this page — it shows how each refinement moved the posterior. <b>The single biggest swing</b> was the inference fix in round 2: prior versions reported 4.5% holds with 95% near-term crossings. With proper Bayesian inference (soft likelihoods, importance sampling, collapsed redundant priors), the posterior settled at 93% holds — same model, same observations, but the inference machine was previously degenerate.</p>
+  <h3>Key meta-finding</h3>
+  <p>The single biggest swing came not from any physics fix but from the <b>Bayesian inference audit</b>. Hard "T ≥ 95 °F at hr 74" constraint + a bimodal I₀ prior with a deterministic-reject tail were dropping acceptance from 38% to 0.2% and producing a <i>degenerate</i> posterior (100% holds, 0 crossings — the model literally couldn't answer the question). Replacing the hard constraint with a censored-Gaussian likelihood and collapsing the unhelpful I₀ tail moved acceptance back to 68% with a meaningful posterior — without changing any physics. Most modeling failures aren't physics failures; they're inference failures.</p>
 </section>
 
 <!-- SOURCES -->
 <section id="sources">
-  <h2>9 — Sources</h2>
-  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 to 25. Three parallel research agents gathered the initial corpus (news, chemistry references, weather/environment); six audit agents wrote evaluation docs.</p>
+  <h2>6 — Sources</h2>
+  <p>Every fact in this retrospective is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 through 25 across 92 files. Three rounds of agent-driven research:</p>
 
   <div class="grid-2">
     <div class="card">
-      <h4>Snapshot stats</h4>
+      <h4>Stats</h4>
       <ul>
-        <li><b>News</b> — <span id="src-count-news">—</span> articles across 16+ outlets</li>
-        <li><b>Reference</b> — <span id="src-count-ref">—</span> chemistry/technical files including six audit docs</li>
-        <li><b>Weather/environment</b> — <span id="src-count-wx">—</span> files</li>
-        <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>
+        <li><b>News:</b> <span id="src-count-news">—</span> articles across 16+ outlets, including the resolution announcement (ABC7, CBS LA, Newsweek, MyNewsLA)</li>
+        <li><b>Reference:</b> <span id="src-count-ref">—</span> chemistry/technical files including nine audit reports and the Rohm-Haas / Synthron historical-incident dossiers</li>
+        <li><b>Weather/environment:</b> <span id="src-count-wx">—</span> files</li>
       </ul>
     </div>
     <div class="card">
@@ -489,115 +236,89 @@ Survival constraints (importance-sampled weights, not hard rejects):
         <li>Click any row in the tables below to open on GitHub</li>
         <li>Clone offline: <code>git clone https://github.com/KaraZajac/garden-grove-mma-analysis</code></li>
         <li>The <code>INDEX.md</code> in each subfolder is the fastest starting point</li>
+        <li>The 280-fact ledger (<code>fact-ledger-2026-05-25.md</code>) is the canonical synthesis</li>
       </ul>
     </div>
   </div>
 
-  <h3>News (<span id="src-h-news">—</span>)</h3>
-  <table><thead><tr><th>File</th><th>Outlet</th><th>Note</th></tr></thead><tbody id="src-news"></tbody></table>
+  <h3>Highlighted (resolution + key audits)</h3>
+  <table>
+    <thead><tr><th>File</th><th>Type</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/news/abc7-bleve-threat-eliminated.md" target="_blank" rel="noopener"><code>abc7-bleve-threat-eliminated.md</code></a></td><td>News</td><td>The Monday-morning resolution announcement (McGovern)</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/fact-ledger-2026-05-25.md" target="_blank" rel="noopener"><code>fact-ledger-2026-05-25.md</code></a></td><td>Synthesis</td><td>280 discrete facts; surfaced that "77 °F Fri morning" was exterior IR, not interior gauge</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a></td><td>Audit</td><td>Caught solar-phase + O₂-cliff bugs</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/tank-audit-2026-05-25.md" target="_blank" rel="noopener"><code>tank-audit-2026-05-25.md</code></a></td><td>Audit</td><td>PSV mechanically broken; deluge realism</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/solutions-2026-05-25.md" target="_blank" rel="noopener"><code>solutions-2026-05-25.md</code></a></td><td>Brainstorm</td><td>Mitigation options including drone phenothiazine injection</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/rohm-haas-2010-detailed.md" target="_blank" rel="noopener"><code>rohm-haas-2010-detailed.md</code></a></td><td>Calibration</td><td>10%/13.5h/no-rupture target for v6 falsification test</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/v6-rohm-haas-calibration-2026-05-25.md" target="_blank" rel="noopener"><code>v6-rohm-haas-calibration-2026-05-25.md</code></a></td><td>Calibration</td><td>v5 chemistry produces bimodal outcome, not steady vent</td></tr>
+      <tr><td><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/latimes-picazo-why-tank-hard-to-fix.md" target="_blank" rel="noopener"><code>latimes-picazo-why-tank-hard-to-fix.md</code></a></td><td>Expert</td><td>USC Prof. Picazo's BLEVE-physics-at-boiling-point framing</td></tr>
+    </tbody>
+  </table>
 
-  <h3>Reference (<span id="src-h-ref">—</span>)</h3>
-  <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-ref"></tbody></table>
-
-  <h3>Weather &amp; environment (<span id="src-h-wx">—</span>)</h3>
-  <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-wx"></tbody></table>
+  <details style="margin-top:18px">
+    <summary style="cursor:pointer;color:var(--ctp-mauve);font-family:var(--mono);font-size:13px">Full source manifest (click to expand)</summary>
+    <h4 style="margin-top:14px">News (<span id="src-h-news">—</span>)</h4>
+    <table><thead><tr><th>File</th><th>Outlet</th><th>Note</th></tr></thead><tbody id="src-news"></tbody></table>
+    <h4>Reference (<span id="src-h-ref">—</span>)</h4>
+    <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-ref"></tbody></table>
+    <h4>Weather &amp; environment (<span id="src-h-wx">—</span>)</h4>
+    <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-wx"></tbody></table>
+  </details>
 </section>
 
 <!-- REPRODUCE -->
 <section id="reproduce">
-  <h2>10 — Reproduce / extend</h2>
-  <div class="grid-2">
-    <div class="card">
-      <h4>Local quick start</h4>
-      <code style="font-family:var(--mono);font-size:12px;color:var(--ink);display:block;white-space:pre-line;background:var(--panel-2);padding:10px;border-radius:4px;border:1px solid var(--line)">
+  <h2>7 — Reproduce</h2>
+  <div class="card">
+    <code style="font-family:var(--mono);font-size:12px;color:var(--ink);display:block;white-space:pre-line;background:var(--panel-2);padding:10px;border-radius:4px;border:1px solid var(--line)">
 git clone https://github.com/KaraZajac/garden-grove-mma-analysis
 cd garden-grove-mma-analysis
 
-# View the site
+# View the retrospective
 open index.html
-# or serve: python3 -m http.server 8000
 
-# Re-run the Monte Carlo (v4, importance-sampled)
-node scripts/montecarlo.js 10000
+# Re-run the Monte Carlo (v5, importance-sampled)
+node scripts/montecarlo.js 5000
 
-# Sensitivity sweep (NOTE: out of sync with v4 model; rewrite pending)
-node scripts/sensitivity.js 1500
+# Sensitivity sweep
+node scripts/sensitivity.js 800
 
-# Both at once + auto-commit if anything changed
-bash scripts/refresh.sh 10000 1500
-      </code>
-    </div>
-    <div class="card">
-      <h4>Where to start reading code</h4>
-      <ul>
-        <li><code>scripts/montecarlo.js</code> — canonical model (read the header for changes vs prior versions)</li>
-        <li><code>scripts/sensitivity.js</code> — sensitivity sweep (currently running OLD physics — Bayesian audit flagged; rewrite pending)</li>
-        <li><code>assets/simulator.js</code> — interactive in-browser version (also out of sync with v4 — todo)</li>
-        <li><code>assets/consequence.js</code> — TNT overpressure + thermal + dispersion</li>
-        <li><code>sources/reference/*-audit-*.md</code> — six audit reports</li>
-      </ul>
-    </div>
+# Falsification test against Rohm-Haas 2010
+node scripts/calibrate-rohm-haas.js 200
+    </code>
   </div>
 </section>
 
 <!-- CAVEATS -->
 <section id="caveats">
-  <h2>11 — Caveats &amp; limitations</h2>
+  <h2>8 — Caveats</h2>
   <ul>
-    <li><b>The whole exercise rests on open-source reporting.</b> No interior temperature reading has been publicly released since Friday 9:40 PM PDT (90 °F gauge). Everything since is inferred from one rate-of-rise observation and the Sun 5:50 PM "≥100 °F gauge-pegged" anchor.</li>
-    <li><b>CRITICAL fact-ledger finding (May 25):</b> the "77 °F Friday morning" reading was <b>exterior drone IR</b>, not interior gauge. The "+13 °F overnight" rise (77→90) was a <b>measurement-category change</b>, not a real heating delta. This means we have ONE real interior anchor (90 °F at hr 30), not two — and the "1 °F/hr" rate-of-rise that's been cited everywhere is computed from an exterior-vs-interior interpolation, not a real heating rate. The model still uses 1 °F/hr as a soft calibration target but this is now flagged as suspect.</li>
-    <li><b>v5 added three chemistry mechanisms (Mayo, peroxide, polymer scission)</b> with constants from Polymer Handbook + Lin-Hsieh + Denisov. These are at the right order of magnitude but not measured for this specific aged-batch chemistry.</li>
-    <li><b>Synthron 2006 is NOT an MMA analog</b> — it was n-butyl acrylate + benzoyl peroxide, with mechanical-containment failure (4 of 18 manway clamps) as the proximate cause. Prior audits conflated it with MMA chemistry. Reframed in the calibration section.</li>
-    <li><b>v5 holds at 99.5% but acceptance dropped to 25%</b> — dynamic stratification rejects more trajectories that creep into the lower effective threshold. ESS efficiency 93% (excellent quality among accepted), but the 75% hard-rejection rate is large and itself informative: most prior-space combinations of parameters are inconsistent with the survival history.</li>
-    <li><b>Threshold prior is centered on Picazo's BLEVE physics (~213 °F)</b> with N(210, 25). The earlier "approximately 100 °F out of control" responder quote is reinterpreted as a caution threshold, not catastrophic.</li>
-    <li><b>Stratification offset</b> is sampled N(20, 12) °F because the gauge probably reads bulk T but the reaction zone is the hotter top liquid layer. Effective threshold = sampled BLEVE − sampled stratification.</li>
-    <li><b>Crack-vent magnitude</b> is approximate. No measurement of crack flow rate or geometry exists; the model uses Bernoulli flow on a sampled ~1 cm² area, giving ~5–25 kW depending on T.</li>
-    <li><b>Operational realism multipliers</b> (coverage_frac ~0.5, duty_cycle ~0.9) come from the fire-service audit. These are honest order-of-magnitude estimates, not measurements.</li>
-    <li><b>Polymer kinetics not yet at v5.</b> The kinetics audit identified thermal Diels-Alder initiation, peroxide autocatalysis, and polymer auto-catalysis at the wall skin (the actual Synthron 2006 failure mode) as missing. These could shift the posterior modestly toward more crossing mass at high X.</li>
-    <li><b>Sensitivity script is out of sync with v4 physics.</b> Any sensitivity ranking shown elsewhere uses v3 priors and shouldn't be trusted for v4 conclusions. Rewrite pending.</li>
-    <li><b>The consequence map's screening formulas</b> (Brode, point-source thermal, Pasquill-Gifford with mild heavy-gas correction) give order-of-magnitude footprints. The audit flagged pool-fire burn rate as conservative (~2× literature) and heavy-gas dispersion correction as possibly non-conservative.</li>
-    <li><b>This is not operational guidance.</b> Defer to OCFA, EPA, and the responding hazmat teams for any safety-affecting decision.</li>
+    <li><b>Open-source only.</b> No interior temperature reading was publicly released between Friday 9:40 PM (90 °F gauge) and Sunday 5:50 PM (≥100 °F pegged). The Mon 8:13 AM 93 °F reading was the next anchor. Inferences between were stochastic.</li>
+    <li><b>Fact-ledger correction:</b> the "77 °F Fri morning" reading widely cited in news coverage was <b>exterior drone IR</b>, not interior gauge. The widely-quoted "1 °F/hr rise" was computed from interpolating across measurement categories. The model's calibration used it anyway as a soft target — a real but bounded imprecision.</li>
+    <li><b>Kinetic constants are representative.</b> A, Ea, and the chemistry-bypass-channel rates (Mayo, peroxide, polymer scission) trace to Polymer Handbook and standard references, but are not measured for this specific aged batch.</li>
+    <li><b>Validation depends on the crack-vent prior.</b> A more pessimistic A_crack prior would have flipped the v5 posterior toward agreeing with OCFA's "we are not there yet" hedge — also defensible at the time. The validation is real but partly stochastic.</li>
+    <li><b>v5 cannot reproduce the Rohm-Haas 2010 steady-state PSV-vent regime.</b> v6 calibration showed v5 chemistry produces bimodal outcomes (quiet polymerize OR runaway), not the intermediate. Either the Rohm-Haas regime is genuinely narrow in real chemistry, or our model needs PSV-chatter dynamics that aren't currently captured.</li>
+    <li><b>Synthron 2006 is NOT an MMA analog</b> — it was n-butyl acrylate + benzoyl peroxide with a mechanical containment failure. Prior audits conflated. Reframed in the fact ledger.</li>
+    <li><b>Not operational guidance.</b> This is a post-incident retrospective. The audits' value is methodological; numerical estimates are conditioned on a model whose constants are bounded but not measured.</li>
   </ul>
-
-  <div class="callout crit">
-    <b>If you are in the evacuation zone, follow official instructions, not this page.</b>
-  </div>
 </section>
 
 </main>
 
 <footer>
-  Open-source analytical exercise. No PII, no inside information, no operational role.
-  <b>Model v5</b>: lumped-parameter ODE thermal model — Arrhenius kinetics + Trommsdorff sigmoidal gel + binary inhibition + O₂-cliff + Mayo/Diels-Alder thermal self-init + peroxide autocatalysis (ROOH state) + PMMA wall-skin scission + PMMA fouling (capped 3 mm) + deluge evaporative cooling + time-gated crack-vent + net IR radiative loss + dynamic stratification (X-dependent) + Cp(X) + ΔH_p(X) + withdrawal-trigger collapse + clock-aligned diurnal solar.
-  Posterior via importance-sampled ABC conditioned on three observations (no BLEVE crossing before hour 75, Thursday auto-vent setpoint calibration, gauge-pegged ≥100 °F at hour 74 with censored-Gaussian likelihood).
-  Calibrated through nine independent agent audits (three rounds: physics/content/gap; physics-2/tank/numbers + Bayesian/kinetics/ops; Rohm-Haas/Synthron/solutions/fact-ledger/kinetics-impl).
+  Open-source retrospective. No PII, no inside information, no operational role.
+  Method: lumped-parameter ODE thermal model (Arrhenius + Trommsdorff + binary inhibition + O₂ cliff + Mayo/Diels-Alder + peroxide autocatalysis [ROOH state] + PMMA backbone scission + PMMA fouling [capped] + deluge evaporative cooling + time-gated crack-vent + net IR + dynamic stratification + Cp(X)/ΔH_p(X) + withdrawal trigger + diurnal solar). Posterior via importance-sampled ABC over 17 priors, conditioned on no-BLEVE survival + censored-Gaussian gauge likelihood + Thursday-vent setpoint anchor. Six model iterations + nine audit agents.
+  Validated against OCFA Mon 5/25 8:13 AM PDT resolution announcement.
   Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
 </footer>
 
-<!-- Chart.js + Leaflet via CDN -->
+<!-- Chart.js only — no Leaflet / consequence map / interactive widgets -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="assets/data.js"></script>
-<script src="assets/simulator.js"></script>
 
 <script>
 (function(){
-  const riskClass = r => {
-    const m = {Moderate:'warn',Elevated:'warn',Reduced:'ok',High:'severe',Severe:'severe',Critical:'crit'};
-    return m[r] || 'warn';
-  };
-  const tb = document.getElementById('timeline-body');
-  GG.timeline.forEach(r=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML =
-      `<td class="num">${r.h}</td>`+
-      `<td>${r.when}</td>`+
-      `<td><span class="tag ${r.type}">${r.type}</span></td>`+
-      `<td class="num">${r.tempF === null ? '—' : r.tempF + ' °F'}</td>`+
-      `<td>${r.event}</td>`+
-      `<td><span class="tag ${riskClass(r.risk)}">${r.risk}</span></td>`;
-    tb.appendChild(tr);
-  });
-
   // Source-snapshot tables
   function renderSources(tbodyId, items, folder, countId, headerId){
     const tb = document.getElementById(tbodyId);
@@ -624,11 +345,6 @@ bash scripts/refresh.sh 10000 1500
 </script>
 
 <script src="assets/charts.js"></script>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="assets/consequence.js"></script>
-<script src="assets/consequence-map.js"></script>
 
 </body>
 </html>
