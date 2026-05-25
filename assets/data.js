@@ -43,9 +43,12 @@ window.GG = {
     {h:64,   when:"Sun 5/24, 7:40 am",  tempF:null,  type:"measured",  event:"Specialized recon discovers crack(s) in tank shell; potentially relieving pressure (ABC7/FoxLA McGovern)", risk:"Critical"},
     {h:68,   when:"Sun 5/24, 11:40 am", tempF:null,  type:"measured",  event:"OCFA Interim Chief McGovern publicly announces crack; 'positive intel that could shift response'", risk:"Severe"},
     {h:74,   when:"Sun 5/24, 5:40 pm",  tempF:100,   type:"measured",  event:"Interior gauge ≥100 °F — PEGGED at maximum. True T unknown; old runaway threshold empirically falsified (ABC7)", risk:"Critical"},
-    {h:75,   when:"Sun 5/24, 6:40 pm",  tempF:null,  type:"modeled",   event:"Current — MC survival cutoff; tank surviving past 100°F validates higher BLEVE threshold",  risk:"Critical"},
-    {h:96,   when:"Mon 5/25, 3:40 pm",  tempF:null,  type:"hypothesized", event:"Secondary solar peak window; afternoon clustering still holds within days", risk:"High"},
-    {h:148,  when:"Wed 5/27, ~7:40 pm", tempF:213,   type:"hypothesized", event:"MMA boiling point ≈ Picazo BLEVE threshold (LAT) — well above empirical 100°F gauge", risk:"Critical"},
+    {h:75,   when:"Sun 5/24, 6:40 pm",  tempF:null,  type:"measured",  event:"v4 MC survival cutoff (last public OCFA briefing of Sun afternoon)",          risk:"Critical"},
+    {h:79,   when:"Sun 5/24, 10:40 pm", tempF:null,  type:"measured",  event:"McGovern WALKBACK: 'We are not there yet, we need to run this operation tonight.' BLEVE risk explicitly NOT off the table (ABC7/CBS LA)", risk:"Critical"},
+    {h:80,   when:"Sun 5/24, 11:40 pm", tempF:null,  type:"measured",  event:"All-night recon mission to determine if crack is venting (good) or precursor to rupture (bad); IR-drone confirms single crack",            risk:"Critical"},
+    {h:84,   when:"Mon 5/25, 3:40 am",  tempF:null,  type:"measured",  event:"State surge: 785+ personnel mobilized (only 3 hazmat teams + 24 scientists). School closures extended through Fri 5/29",                    risk:"Severe"},
+    {h:120,  when:"Tue 5/26, 3:40 pm",  tempF:null,  type:"hypothesized", event:"MC median crossing time IF it fails (~7% probability per v4 posterior)",   risk:"High"},
+    {h:148,  when:"Wed 5/27, ~7:40 pm", tempF:213,   type:"hypothesized", event:"MMA boiling point ≈ Picazo BLEVE threshold (LAT)",                            risk:"Critical"},
   ],
 
   // Garden Grove ambient air forecast (°F)
@@ -111,6 +114,11 @@ window.GG = {
       ["dnyuz-latimes-resolution-pathway.md",          "DNYUZ/LAT",      "Resolution pathways: passive headspace buffer; controlled spill"],
       ["mira-safety-mma-chemistry-explainer.md",       "MIRA Safety",    "Colin Ma — MEHQ-depletion → thermal-runaway mechanism"],
       ["sytepoint-asset-integrity-failure.md",         "Sytepoint",      "Karapetyan — proximate cause is asset-integrity failure (PSV)"],
+      ["abc7-all-night-mission-bleve-not-there-yet.md", "ABC7 LA",       "★★ Sun eve — McGovern walkback: 'we are not there yet'; all-night recon mission"],
+      ["cbs-la-all-night-mission-bleve-not-there-yet.md","CBS LA",       "Sun eve — independent corroboration; BLEVE risk NOT off the table"],
+      ["nbc-la-live-blog-sunday-evening-overnight-mission.md", "NBC LA", "Sun eve — IR-drone confirms single crack; weather-stripping clarification"],
+      ["calgov-785-personnel-mobilized.md",            "Newsom EOC",     "Sun — state surge: 785+ personnel but only 3 hazmat teams + 24 scientists"],
+      ["ocde-school-closures-extended-monday.md",      "OC Dept of Ed",  "Sun eve — school closures extended through Fri 5/29 (week-long expectation)"],
       ["INDEX.md",                                     "INDEX",          "All news files with summaries"],
     ],
     reference: [

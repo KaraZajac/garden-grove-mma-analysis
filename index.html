@@ -52,7 +52,7 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      The v4 importance-sampled Monte Carlo (10,000 weighted trajectories, 68% prior-acceptance, ESS ≈ 50%), conditioned on three independent observations — (a) no catastrophic failure observed before hour 75, (b) gauge pegged at ≥100 °F at hour 74 (modeled as a censored-Gaussian likelihood), and (c) Thursday auto-vent at ~95 °F bulk back-calibrating the relief setpoint — puts holds at <b><span id="bluf-holds">~93</span>%</b> through Thursday. The remaining <b>~7% failure mass</b> is spread thinly across the week (~0.5–1.5% per day-window) with no near-term cluster. Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue late afternoon PDT</span>. Peak-T posterior P50 ≈ <span id="bluf-peak50">109</span> °F, P90 ≈ <span id="bluf-peak90">152</span> °F.
+      <b>v4 model says ~93% holds; OCFA leadership has now publicly hedged.</b> Sunday evening McGovern walked back the morning's "positive intel" framing: <i>"We are not there yet; we need to run this operation tonight."</i> An all-night recon mission is underway to determine whether the crack is a benign vent or a precursor to rupture. The model's <b><span id="bluf-holds">~93</span>%</b> holds through Thursday is the calibrated posterior (10,000 weighted trajectories, 68% acceptance, ESS ≈ 50%) — but it conditions on the survival history up to Sun ~6 PM, before McGovern's walkback. The ~7% failure mass is spread across Tue–Thu+. Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue late afternoon PDT</span>. Peak-T posterior P50 ≈ <span id="bluf-peak50">109</span> °F, P90 ≈ <span id="bluf-peak90">152</span> °F. <b>School closures extended through Fri 5/29</b> — emergency managers expect the incident to run through the week.
     </div>
   </div>
 
@@ -189,8 +189,8 @@ Survival constraints (importance-sampled weights, not hard rejects):
     </div>
   </div>
 
-  <div class="callout">
-    <b>Where the model lands.</b> The v4 posterior weights Hypothesis A heavily (~93%) but does NOT rule out B (~7% crossing mass, spread Tue–Thu+). What would tip the model toward B in a future update: any new interior temperature reading above ~120 °F, observed crack growth, a second crack, audible boiling, or visible shell-bulge progression. Conversely, what would tip toward A: a confirmed gauge reading at or below 100 °F, evidence the crack is stable, or OCFA lifting any portion of the evacuation zone.
+  <div class="callout warn">
+    <b>Where the model lands — and where OCFA disagrees.</b> The v4 posterior weights Hypothesis A heavily (~93%) but does NOT rule out B (~7% crossing mass, spread Tue–Thu+). Sunday evening, however, McGovern publicly hedged toward B: <i>"We are not there yet; we need to run this operation tonight."</i> The all-night mission is a real-world Bayesian update — its outcome (announced Monday-morning briefing) will move the posterior materially in one direction or the other. The state-surge composition is also revealing: 785+ personnel mobilized but only 3 hazmat teams and 24 scientists — heavy on law enforcement and shelter ops, light on chemistry mitigation tools. That signals the response posture is "contain and wait" rather than "actively neutralize."
   </div>
 </section>
 
