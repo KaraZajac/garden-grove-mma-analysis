@@ -11,11 +11,11 @@
   const MMA = {
     rho_liq:   940,        // kg/m^3
     MW:        100.12,     // g/mol
-    dHc:       26.6e6,     // J/kg  heat of combustion (MMA)
+    dHc:       25.4e6,     // J/kg  heat of combustion (MMA) — per NIST ΔcH ≈ −2547 kJ/mol
     dHp:       576e3,      // J/kg  heat of polymerization
     LEL_vol:   0.017,      // 1.7%
     UEL_vol:   0.082,      // 8.2%
-    burnRate:  0.040,      // kg/(m^2 s)  pool-fire mass burn rate (typical liquid)
+    burnRate:  0.025,      // kg/(m^2 s)  pool-fire mass burn rate (Babrauskas, light esters)
     Xr:        0.30,       // radiative heat fraction
   };
 

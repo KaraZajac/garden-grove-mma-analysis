@@ -103,20 +103,27 @@
       set('mc-peak50',  j.peak_p50_F?.toFixed(0) + ' °F');
       set('mc-peak90',  j.peak_p90_F?.toFixed(0) + ' °F');
       set('mc-asof',    new Date(j.generated_at).toLocaleString());
-      // also hydrate BLUF
-      set('bluf-holds',     j.holds_pct.toFixed(0));
-      set('bluf-median',    j.median_crossing_label || '— (held)');
-      set('bluf-holds-2',   j.holds_pct.toFixed(1) + ' %');
-      set('bluf-median-2',  j.median_crossing_label || '— (held)');
-      set('bluf-iqr',       (j.iqr_p25_label && j.iqr_p75_label)
-                              ? `${j.iqr_p25_label} → ${j.iqr_p75_label}` : '—');
-      // Largest non-hold bin
-      const nonHold = j.bins.filter(b => !b.hold).sort((a,b) => b.pct - a.pct);
-      if (nonHold[0]){
-        set('bluf-top-bin', nonHold[0].label);
-        set('bluf-top-pct', '≈ ' + nonHold[0].pct.toFixed(1) + ' %');
-      }
-      set('page-asof', new Date(j.generated_at).toLocaleString());
+      // BLUF inline tokens
+      set('bluf-holds',  j.holds_pct.toFixed(0));
+      set('bluf-median', j.median_crossing_label || '— (held)');
+      set('bluf-peak50', j.peak_p50_F?.toFixed(0));
+      set('bluf-peak90', j.peak_p90_F?.toFixed(0));
+      // BLUF verdict boxes (new v4 IDs)
+      set('v-holds',   j.holds_pct.toFixed(1) + ' %');
+      set('v-median',  j.median_crossing_label || '— (held)');
+      set('v-iqr',     (j.iqr_p25_label && j.iqr_p75_label)
+                          ? `${j.iqr_p25_label} → ${j.iqr_p75_label}` : '—');
+      set('v-peak',    (j.peak_p50_F?.toFixed(0) || '—') + ' / ' + (j.peak_p90_F?.toFixed(0) || '—') + ' °F');
+      set('v-acceptance', j.acceptance_rate.toFixed(1) + ' %');
+      set('v-ess-eff', (j.weight_efficiency_pct?.toFixed(1) || '—') + ' %');
+      // Posterior section verdict boxes
+      set('mc-runs',  j.n_accepted.toLocaleString());
+      set('mc-attempted', j.n_attempted.toLocaleString());
+      set('mc-ess',   j.effective_sample_size?.toFixed(0) || '—');
+      set('mc-cross', j.crosses_pct.toFixed(1) + ' %');
+      set('mc-strat', (j.stratification_p50_F?.toFixed(0) || '—') + ' °F');
+      // Header
+      set('hdr-holds', j.holds_pct.toFixed(1) + ' %');
     })
     .catch(()=>{});
 
@@ -164,27 +171,29 @@
       .catch(()=>{});
   }
 
-  // ---------- Chart 3: Forecast ambient ----------
-  new Chart(document.getElementById('chart-forecast'), {
-    type:'bar',
-    data:{
-      labels: GG.forecast.map(d => d.date),
-      datasets:[
-        {label:'High °F', data:GG.forecast.map(d=>d.hi), backgroundColor:ctp.peach, borderColor:line, borderWidth:1},
-        {label:'Low °F',  data:GG.forecast.map(d=>d.lo), backgroundColor:ctp.blue,  borderColor:line, borderWidth:1},
-      ]
-    },
-    options:{
-      maintainAspectRatio:false,
-      scales:{
-        x:{grid:{color:line}},
-        y:{title:{display:true, text:'°F', color:muted}, grid:{color:line}, suggestedMin:40, suggestedMax:90}
+  // ---------- Chart 3: Forecast ambient (skipped on v4 page) ----------
+  const forecastCanvas = document.getElementById('chart-forecast');
+  if (forecastCanvas){
+    new Chart(forecastCanvas, {
+      type:'bar',
+      data:{
+        labels: GG.forecast.map(d => d.date),
+        datasets:[
+          {label:'High °F', data:GG.forecast.map(d=>d.hi), backgroundColor:ctp.peach, borderColor:line, borderWidth:1},
+          {label:'Low °F',  data:GG.forecast.map(d=>d.lo), backgroundColor:ctp.blue,  borderColor:line, borderWidth:1},
+        ]
       },
-      plugins:{legend:{position:'bottom', labels:{color:ink}}}
-    }
-  });
+      options:{
+        maintainAspectRatio:false,
+        scales:{x:{grid:{color:line}}, y:{title:{display:true,text:'°F',color:muted}, grid:{color:line}, suggestedMin:40, suggestedMax:90}},
+        plugins:{legend:{position:'bottom', labels:{color:ink}}}
+      }
+    });
+  }
 
-  // ---------- Simulator: live ODE plot ----------
+  // ---------- Simulator (v3 page) — gracefully skipped on v4 page ----------
+  if (!document.getElementById('s-UA')) return;
+
   const sliders = {
     UA:        document.getElementById('s-UA'),
     Ea:        document.getElementById('s-Ea'),

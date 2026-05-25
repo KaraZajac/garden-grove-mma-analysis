@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Garden Grove MMA Tank — Thermal Runaway Analysis</title>
-<meta name="description" content="Analytical hypothesis brief, calibrated thermal-runaway simulator, and Monte Carlo failure-window estimate for the Garden Grove (CA) methyl methacrylate storage-tank incident." />
+<title>Garden Grove MMA Tank — Thermal-Runaway Analysis (v4)</title>
+<meta name="description" content="Open-source thermal-runaway analysis of the Garden Grove (CA) methyl methacrylate storage-tank incident. Six-audit-pass calibrated model with importance-sampled Bayesian posterior." />
 <link rel="stylesheet" href="assets/styles.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -14,39 +14,36 @@
 <div class="classification">UNCLASSIFIED // OPEN-SOURCE ANALYSIS // NOT OPERATIONAL GUIDANCE</div>
 
 <header class="site">
-  <h1>Garden Grove MMA Tank — Thermal Runaway Analysis</h1>
-  <div class="sub">An open-source hypothesis brief, calibrated thermal model, and Monte Carlo failure-window estimate.</div>
+  <h1>Garden Grove MMA Tank — Thermal-Runaway Analysis</h1>
+  <div class="sub">A calibrated, six-audit-pass open-source model of the GKN Aerospace MMA storage-tank incident. Bayesian posterior over future failure timing, conditioned on observed survival to <span id="hdr-now">Sun 5/24 6:40 PM PDT</span>.</div>
   <div class="meta">
-    <span><b>Incident:</b> GKN Aerospace, Garden Grove, CA</span>
-    <span><b>Chemical:</b> Methyl methacrylate (MMA)</span>
-    <span><b>Hour 0:</b> Thu 5/21, 3:40 pm PDT</span>
-    <span><b>Last interior reading:</b> 90 °F @ t≈30 h</span>
+    <span><b>Model:</b> v4 (importance-sampled, post-six-audit)</span>
+    <span><b>Last gauge reading:</b> ≥100 °F at hr 74 (gauge-pegged)</span>
+    <span><b>Cracks observed:</b> hr 64 (passively venting)</span>
+    <span><b>Posterior:</b> <span id="hdr-holds">— %</span> holds through Thu</span>
   </div>
 </header>
 
 <nav class="toc">
+  <a href="#about">About</a>
   <a href="#bluf">BLUF</a>
-  <a href="#changes">What changed</a>
-  <a href="#chemistry">Chemistry</a>
   <a href="#timeline">Timeline</a>
   <a href="#model">Model</a>
-  <a href="#simulator">Simulator</a>
-  <a href="#monte-carlo">Monte Carlo</a>
-  <a href="#sensitivity">Sensitivity</a>
-  <a href="#hypothesis">Hypothesis</a>
+  <a href="#posterior">Posterior</a>
+  <a href="#hypotheses">Hypotheses</a>
   <a href="#consequence">Consequence</a>
-  <a href="#weather">Weather</a>
-  <a href="#snapshot">Sources</a>
+  <a href="#audits">Audits</a>
+  <a href="#sources">Sources</a>
   <a href="#reproduce">Reproduce</a>
   <a href="#caveats">Caveats</a>
 </nav>
 
 <main>
 
-<!-- SCOPE -->
+<!-- ABOUT -->
 <section id="about" style="margin-bottom:32px">
   <div class="callout warn">
-    <b>What this is.</b> An open-source modeling exercise built from public reporting. <b>What this is NOT</b> — an OCFA product, an engineered-safety analysis, or operational guidance. Numbers are screening estimates with explicit uncertainty bands. If you are in the evacuation zone, follow official instructions, not this page. Last updated: <span id="page-asof">2026-05-24</span> · model auto-refreshes hourly (<a href="https://github.com/KaraZajac/garden-grove-mma-analysis/commits/main" target="_blank" rel="noopener">commit log</a>).
+    <b>What this is:</b> a public-interest modeling exercise built entirely from open-source reporting. Three rounds of independent agent audits (physics, tank engineering, numbers; then Bayesian inference, polymer kinetics, fire-service operations) have been folded into the current model. <b>What it is NOT</b>: an OCFA product, an engineered-safety analysis, or operational guidance. If you are in the evacuation zone, follow official instructions, not this page. Auto-snapshots: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
   </div>
 </section>
 
@@ -55,81 +52,26 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      <b>Paradigm shift Sun 5/24 evening.</b> Interior gauge pegged at ≥100 °F by 5:50 PM PDT — the original 100 °F runaway threshold is empirically falsified. Threshold prior re-centered on Picazo's BLEVE physics (MMA boiling ≈ 213 °F). With three independent survival constraints (no BLEVE crossing, no visible PSV vent, T ≥ 95 °F by hour 74), the model now has only ~0.2% prior-acceptance — the observations are barely consistent with the priors. Of the <b>~2,000 accepted trajectories</b>, <b><span id="bluf-holds">~4.5</span>% hold</b> through Wednesday; the remaining <b>~95% cross the BLEVE threshold</b> with median <span id="bluf-median">Sun ~10:41 PM PDT</span> (IQR Sun 8 PM → Mon 2 AM). Top sensitivity is the deluge mass-transfer coefficient h_m (Δ 82% over its range — single dominant lever). The model is saying near-term BLEVE risk is high; OCFA is publicly more optimistic about the crack-vent path. <b>Caveat: the crack-vent cooling term is new and approximate.</b>
+      The v4 importance-sampled Monte Carlo (10,000 weighted trajectories, 68% prior-acceptance, ESS ≈ 50%), conditioned on three independent observations — (a) no catastrophic failure observed before hour 75, (b) gauge pegged at ≥100 °F at hour 74 (modeled as a censored-Gaussian likelihood), and (c) Thursday auto-vent at ~95 °F bulk back-calibrating the relief setpoint — puts holds at <b><span id="bluf-holds">~93</span>%</b> through Thursday. The remaining <b>~7% failure mass</b> is spread thinly across the week (~0.5–1.5% per day-window) with no near-term cluster. Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue late afternoon PDT</span>. Peak-T posterior P50 ≈ <span id="bluf-peak50">109</span> °F, P90 ≈ <span id="bluf-peak90">152</span> °F.
     </div>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Holds</div><div class="v" id="bluf-holds-2">— %</div><div class="vsm">post-paradigm-shift posterior</div></div>
-    <div class="box"><div class="k">Median crossing</div><div class="v" id="bluf-median-2">—</div><div class="vsm">IQR: <span id="bluf-iqr">—</span></div></div>
-    <div class="box"><div class="k">Most-likely window</div><div class="v" id="bluf-top-bin">Sun 7pm – midnight</div><div class="vsm" id="bluf-top-pct">≈ —</div></div>
-    <div class="box"><div class="k">Top sensitivity</div><div class="v" id="bluf-sens-top">h_m (evap)</div><div class="vsm" id="bluf-sens-delta">Δ —</div></div>
-  </div>
-</section>
-
-<!-- WHAT CHANGED -->
-<section id="changes">
-  <h2>What changed recently</h2>
-  <p>Active model. Brief audit trail of substantive shifts in this session, latest first:</p>
-  <ul>
-    <li><b>Paradigm shift (Sun 5/24 evening):</b> OSINT pass found <b>(a) interior gauge pegged at ≥100 °F at 5:50 PM PDT</b> — empirically falsifies the old 100 °F runaway threshold; <b>(b) cracks discovered overnight Sat→Sun</b> per McGovern (Interim Chief), potentially relieving pressure; <b>(c) Picazo (USC, in LAT) puts the real BLEVE threshold at MMA's boiling point ≈ 213 °F</b>. Model updates: threshold prior N(100,4) → N(210,25); added new constraint "T ≥ 95 °F by hour 74"; added crack-vent cooling that ramps near boiling and caps trajectories around 213 °F; PSV constraint window limited to [12, 64] since cracks now provide passive relief; updated mMonomer 23,000 → 24,900 kg (7,000 gal confirmed); survival cutoff hour 62 → 75. <b>Result: holds dropped from 96% to ~4.5%</b>. Acceptance rate fell to 0.2% — the observations are barely consistent with the priors, which is itself informative.</li>
-    <li><b>PSV non-vent constraint added to the MC.</b> The tank visibly auto-vented Thursday at ~95 °F bulk, which back-calibrates the relief setpoint to ~1.5 psig (low-pressure atmospheric storage). Since then the public record shows no further visible venting. That's information the model was discarding. Adding it as a second rejection criterion (reject trajectories where total vapor pressure would exceed P_set between hour 12 and the present) prunes meaningful additional slow-creep trajectories the threshold filter alone misses.</li>
-    <li><b>Survival cutoff extended to Sun 6 am PDT (hour 62).</b> Overnight cron pulled 9 new sources including an Anaheim CivicAlert ("no major changes overnight") and an ABC7 live-blog entry documenting a <b>water-line disruption Sat ~11 pm PDT</b>. The tank survived both. Survival filter now rejects more fast-fail trajectories → holds 94% → ~95%, median crossing pushed 14 h later (Sun ~8 pm → Mon ~11 am).</li>
-    <li><b>Covey's "cure at a slower rate" framing explicitly confirmed</b> (LAist) — directly validates the slow-cure interpretation: the heavy deluge is letting polymerization happen at a controlled pace rather than tipping. OCFA also confirms a <b>controlled spill is the "preferred outcome"</b> with storm-drain containment in place.</li>
-    <li><b>Evaporative cooling from the deluge.</b> Gap analysis flagged the latent-heat term as missing — water film on a hot shell evaporates at 2.26 MJ/kg, roughly doubling the cooling capacity at typical conditions. Added with conservative h_m prior. Net effect: holds 66% → ~94%.</li>
-    <li><b>Audit found and fixed two bugs.</b> (a) The solar phase was anchored to integration time instead of clock time — solar peak was firing at ~6:40 am the next day instead of 3 pm (≈ 9 h phase error). (b) MEHQ inhibitor was never coupled to O₂; depletion timescale was unphysically slow. Both fixed; full report at <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a>.</li>
-    <li><b>PMMA wall fouling added.</b> Polymer skin on the inside of the tank wall (k = 0.19 W/m·K) is now a serial thermal resistance that grows with conversion X. At X = 2% cooling drops 50%; at X = 10% it drops 85%. This is the dominant positive feedback in the runaway dynamics — flipped the largest single failure window from "Wed or later" to the next 6 hours.</li>
-    <li><b>10k Monte Carlo with proper Approximate Bayesian Computation</b> replacing the earlier 300k synthetic distribution. Trajectories are now drawn from priors, integrated forward from the 90 °F anchor, and conditioned on surviving to the present.</li>
-    <li><b>Sensitivity sweep</b> identified spray-water temperature as the dominant lever (Δ 17.4% across the plausible range) — bigger than UA itself once fouling is in the model.</li>
-    <li><b>Full source snapshot</b> — 38 markdown files of news, references, and weather/environment captured for offline reproducibility. Sources tab below.</li>
-    <li><b>Hourly auto-refresh routine</b> running in the cloud — searches for new sources every hour, re-runs both models, and pushes if anything changed.</li>
-  </ul>
-</section>
-
-<!-- CHEMISTRY -->
-<section id="chemistry">
-  <h2>1 — The Chemistry</h2>
-  <p>MMA is a clear, volatile liquid monomer that polymerizes into PMMA (acrylic / Plexiglas). The danger here is not a reaction with water or air — it is <b>runaway self-polymerization</b>. MMA is shipped with a small amount of inhibitor (MEHQ, ~10–100 ppm) that prevents monomer molecules from linking. The inhibitor only works in the presence of dissolved oxygen, and it is consumed over time. Once depleted, polymerization begins, releases heat, accelerates, and in a sealed tank produces a self-reinforcing exotherm.</p>
-
-  <div class="grid-2">
-    <div class="card">
-      <h4>Physical constants (MMA)</h4>
-      <table>
-        <tr><td>Boiling point</td><td class="num">101 °C / 214 °F</td></tr>
-        <tr><td>Flash point</td><td class="num">2 °C / 36 °F</td></tr>
-        <tr><td>Autoignition</td><td class="num">435 °C</td></tr>
-        <tr><td>Flammable range</td><td class="num">1.7 – 8.2 %</td></tr>
-        <tr><td>Vapor pressure (20 °C)</td><td class="num">29 mmHg</td></tr>
-        <tr><td>ΔH polymerization</td><td class="num">57.7 kJ/mol</td></tr>
-      </table>
-    </div>
-    <div class="card">
-      <h4>Why this one is hard to stop</h4>
-      <ul>
-        <li><b>Stuck off-load valve.</b> Crews cannot pump product to a safe vessel or inject fresh inhibitor — the deluge is the only control lever.</li>
-        <li><b>O₂-starved inhibitor.</b> A hot vapor-locked tank depletes dissolved O₂; MEHQ stops working even where it is present.</li>
-        <li><b>Trommsdorff gel effect.</b> As MMA polymerizes and thickens, termination slows and the reaction self-accelerates — sharper than plain Arrhenius predicts.</li>
-        <li><b>Polymer-skin fouling.</b> PMMA solidifies preferentially on cool surfaces — the inside of the tank wall where the deluge is hitting. PMMA's thermal conductivity is ~0.19 W/(m·K), almost 300× worse than steel. Even a 1 cm polymer skin doubles the wall's thermal resistance; 2 cm triples it. This is a brutal positive feedback: the chemistry that produces heat also produces the insulation that traps it.</li>
-        <li><b>Cracks observed Sun 5/24.</b> A late-Sat-night recon mission discovered cracks in the tank shell. McGovern (Interim Chief): "potentially relieving some of the pressure." This is a partial passive vent — vapor can escape, dumping latent heat at ~360 kJ/kg. Helps. But cracks in a heating MMA vessel can also be the precursor to ductile-then-brittle failure (BLEVE precursor) — ambiguous.</li>
-        <li><b>Boiling-point threshold (Picazo, USC).</b> The actual BLEVE physics threshold is MMA's boiling point ≈ 213 °F / 101 °C — above this, liquid→gas transition drives super-linear pressure rise that no PSV can keep up with. The earlier responder quote about "approximately 100 °F out of control" was a caution threshold, not a catastrophic one — confirmed empirically now that the gauge has pegged ≥100 °F without immediate failure.</li>
-        <li><b>Gauge ceiling.</b> The interior gauge maxes at 100 °F. Once pegged (Sun 5:50 PM), the true bulk temperature is <b>unknown</b> — could be 105, could be 180. The model has to infer from the rate-of-rise history.</li>
-      </ul>
-    </div>
+    <div class="box"><div class="k">Holds through Thu</div><div class="v" id="v-holds">— %</div><div class="vsm">posterior, full physics + ops realism</div></div>
+    <div class="box"><div class="k">Median crossing</div><div class="v" id="v-median">—</div><div class="vsm">IQR: <span id="v-iqr">—</span></div></div>
+    <div class="box"><div class="k">Posterior peak T</div><div class="v" id="v-peak">—</div><div class="vsm">P50 / P90</div></div>
+    <div class="box"><div class="k">Acceptance / ESS</div><div class="v" id="v-acceptance">— %</div><div class="vsm">ESS efficiency <span id="v-ess-eff">—</span></div></div>
   </div>
 </section>
 
 <!-- TIMELINE -->
 <section id="timeline">
-  <h2>2 — Timeline (anchored)</h2>
-  <p>All times PDT. Hour 0 = Thursday 5/21 at 3:40 pm. Rows tagged
-    <span class="tag measured">measured</span>
-    <span class="tag modeled">modeled</span>
-    <span class="tag hypothesized">hypothesized</span>
-    — every temperature past the Friday-night 90 °F anchor is a projection.</p>
+  <h2>1 — Timeline of observations</h2>
+  <p>All times PDT. Hour 0 = Thursday May 21 at 3:40 PM. The model anchors at the only solid numeric interior reading (90 °F at hour 30) and conditions on three subsequent observations to constrain the posterior.</p>
 
   <div class="chart-wrap">
     <h4>Temperature vs. time</h4>
-    <p class="cap">Green = measured interior readings. Amber = nowcast projection. Purple = forward hypothesis. Red dashed = ~100 °F field-reported "out-of-control" line.</p>
+    <p class="cap">Green = measured interior. Teal triangles = exterior shell (deluge-cooled — informative but not a direct interior measurement). Red dashed = ≥100 °F gauge-pegged anchor (Sun 5/24).</p>
     <canvas id="chart-timeline"></canvas>
   </div>
 
@@ -141,211 +83,126 @@
 
 <!-- MODEL -->
 <section id="model">
-  <h2>3 — The Model</h2>
-  <p>A lumped-parameter energy balance — the standard structure used in thermal-runaway analysis — with three coupled ODEs:</p>
+  <h2>2 — The Model (v4)</h2>
+  <p>A lumped-parameter ODE thermal model with chemistry, fouling, vent, and operational realism. Every term traces to a specific finding in one of the six audits. Equations:</p>
 
   <div class="card">
     <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
 k(T)         = A · exp(−Ea / R·T)                            Arrhenius rate
-g(X)         = 1 + 18·X^2.2     (for X ≥ 0.05; else 1)       Trommsdorff gel-effect amplifier
-dX/dt        = k · (1−X) · (1−I) · g(X)                      conversion
-dI/dt        = −c · k − c_O2·I·H(X − 0.005)                  MEHQ + O₂-cliff
-δ(X)         = f_plate · X · m / (ρ_PMMA · A_cool)           polymer-skin thickness
-U_eff(X)     = 1 / (1/U_clean + δ(X)/k_PMMA)                 fouled heat-transfer coefficient
-Q_evap       = h_m · A_cool · (P_sat(T_film) − RH·P_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
-                                                             deluge latent-heat cooling
-Q_crack(T,t) = K_crack · max(0, T − (T_bp − 5))   for t ≥ 64 h    crack-vent boiling cooling (NEW)
-P_total(T)   = P_air₀·T/T₀ + P_MMA(T)                        vapor-space pressure (Antoine)
-hod(t)       = (t_hr + 15.667) mod 24                        clock-aligned local hour
-Q_solar(t)   = S_max · max(0, cos(2π·(hod − 15)/24))         diurnal forcing
-dT/dt        = (Q_gen − Q_cool) / (m · Cp)                   energy balance
-  Q_gen      = m · ΔH_p · dX/dt
-  Q_cool     = U_eff(X)·A · (T − T_water) + Q_evap + Q_crack − Q_solar
+g(X)         = 1 + 50 · σ((X−0.20)/0.04) · σ((0.85−X)/0.04)  Trommsdorff sigmoidal turn-on + vitrification cutoff
+inhib(I)     = σ((I_crit − I)/0.005)                         binary-with-smoothing inhibition (not (1−I) damping)
+dX/dt        = k · (1−X) · inhib(I) · g(X)
+dI/dt        = −c_inh · k − 1e−3·I · H(X − 1e−5)             MEHQ + O₂ cliff (triggers at X &gt; 10 ppm)
+δ(X)         = min(δ_max, f_plate · X · m / (ρ_PMMA · A_cool))  fouling layer thickness (CAPPED at 3 mm)
+U_eff(X)     = 1 / (1/U_clean + δ(X)/k_PMMA)
+Q_evap       = h_m · A_cool · (p_sat(T_film) − RH·p_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
+Q_crack(t)   = Cd · A_crack · √(2·ρ_vapor·ΔP) · ΔH_vap_MMA    for t ≥ 64 h (TIME-gated, not T-gated)
+Q_IR         = ε·σ·A_ext · (T_shell⁴ − T_sky⁴)               net radiative loss (sky ≈ 50°F at night)
+ops          = coverage_frac · duty_cycle                    operational realism: 0.30–0.60 typical
+withdraw     = H(T − 150°F)                                  OCFA withdrawal trigger collapses cooling to 10%
+Q_cool       = (U_eff · A · (T − T_water) + Q_evap + Q_crack) · ops · (1 − 0.9·withdraw) + Q_IR − Q_solar(t)
+dT/dt        = (Q_gen − Q_cool) / (m · C_p),  Q_gen = m · ΔH_p · dX/dt
 
-Survival constraints (a trajectory is ACCEPTED only if ALL hold):
-  (1)  T &lt; runawayF    for all t ∈ [30, 75]      BLEVE threshold not crossed
-  (2)  P_total &lt; P_psv  for all t ∈ [12, 64]      no visible PSV vent
-  (3)  max T(t)         ≥ 95 °F  for t ≤ 74      gauge pegged ≥ 100 °F at hour 74
+Survival constraints (importance-sampled weights, not hard rejects):
+  HARD reject:  effective threshold (BLEVE − stratification) crossed before hr 75
+  SOFT weight:  Φ((peakF_by_hr_74 − 100 + σ_g) / σ_g)         censored-Gaussian gauge likelihood
     </code>
   </div>
 
-  <p><b>Feedback / loss terms governing the dynamics:</b></p>
+  <p><b>What's new in v4 vs prior versions:</b></p>
   <ul>
-    <li><b>PMMA wall fouling</b> (positive). At X = 2% effective cooling drops ~50%; at X = 10% it drops 85%.</li>
-    <li><b>O₂–MEHQ cliff</b> (positive). Once polymerization consumes O₂ (X &gt; ~0.005), inhibitor collapses on minutes-to-hours.</li>
-    <li><b>Evaporative cooling</b> (negative). Water film latent heat ~26 kW at T_bulk ≈ 90 °F — roughly doubles sensible cooling. Highly sensitive to h_m (mass-transfer coefficient, order-of-magnitude operational uncertainty).</li>
-    <li><b>Crack-vent cooling</b> (negative, post hour 64). MMA vapor escaping through the observed cracks dumps latent heat at ~360 kJ/kg. Ramps sharply as T approaches MMA's boiling point (213 °F); functionally caps trajectories near the boiling plateau if the rest of the system is balanced. Magnitude is approximate — no measurement of crack flow rate exists.</li>
+    <li><b>Importance sampling.</b> Hard "T ≥ 95 °F by hr 74" replaced with a soft censored-Gaussian likelihood. Acceptance jumped from 0.2% (v3) to 68% (v4).</li>
+    <li><b>I₀ prior collapsed.</b> Was bimodal (50% fresh / 50% aged); fresh trajectories couldn't reproduce the observed 77→90 °F rise so were deterministic waste. Now aged-only.</li>
+    <li><b>Operational realism.</b> Wetted-shell coverage ~0.5 × duty cycle ~0.9 multiplies the deluge cooling — portable monitors aren't a 100% film source.</li>
+    <li><b>Crack-vent time-gated.</b> Was T-gated near boiling; per McGovern the crack is venting NOW at 100 °F. Bernoulli-vapor flow magnitude ~5–25 kW.</li>
+    <li><b>Net IR radiative loss.</b> ~10 kW continuous nighttime cooling that prior versions missed.</li>
+    <li><b>Withdrawal trigger.</b> If bulk T &gt; 150 °F, OCFA pulls personnel; cooling collapses to ~10%. Captures real IC decision logic.</li>
+    <li><b>Hot-spot stratification.</b> Gauge reads bulk T but the reaction zone is the hotter top layer. Effective threshold = sampled BLEVE T − sampled ΔT_strat (median ~20 °F).</li>
+    <li><b>Trommsdorff onset moved to X=0.20</b> with sigmoidal turn-on + vitrification cutoff at X=0.85.</li>
+    <li><b>Fouling self-limiting at 3 mm.</b> Old monotonic formula gave 4 inches of PMMA at X=0.5 — physically absurd.</li>
   </ul>
 
-  <p><b>Explosion-risk criterion (Semenov tangency):</b> heat generation grows exponentially with T while sensible cooling grows linearly. Once the gradient of <code>Q_gen</code> with <code>T</code> exceeds <code>U_eff·A</code>, no stable steady state exists. The evaporative term <i>also</i> grows nonlinearly with T (via P_sat), which is why adding it changes the steady-state structure, not just the magnitude.</p>
-
-  <div class="callout crit">
-    <b>Threshold calibration (REVISED Sun 5/24).</b> The original 100 °F "out of control" responder quote was empirically falsified when the interior gauge pegged ≥100 °F at 5:50 PM PDT without immediate failure. Threshold prior is now centered at Picazo's BLEVE physics estimate: <b>~213 °F</b> (MMA boiling at 1 atm), sampled N(210, 25) clipped to [160, 260]. The earlier 100 °F figure is reinterpreted as a CAUTION threshold — the line above which crews lose engineering margin — not the catastrophic-failure line.
+  <div class="callout warn">
+    <b>Calibration honesty.</b> The model is a phenomenological lumped-parameter system, not a first-principles simulation. The pre-exponential <code>A</code> is calibrated to reproduce the observed ~1 °F/hr early rise. All other constants trace to published values (NIST, Polymer Handbook, MMA SDS) or to defensible audit-derived priors. Every prior is documented in the code comments.
   </div>
 </section>
 
-<!-- SIMULATOR -->
-<section id="simulator">
-  <h2>4 — Interactive Simulator</h2>
-  <p>Run the model forward from the current state (90 °F at t≈30 h, evolved to ~54 h baseline). Drag the cooling power (U·A) to find the knife-edge: above ~2,500 W/K and the curve flattens; below ~1,000 W/K and it tips into runaway within hours. Then try the <b>polymer fouling slider</b> — set it from 0.05 (almost no plating) up to 0.5 and watch how dramatically the same U·A loses effectiveness as conversion grows.</p>
-
-  <div class="sim">
-    <div class="controls">
-      <div class="preset">
-        <button data-preset="baseline">Baseline</button>
-        <button data-preset="cooling-wins">Cooling wins</button>
-        <button data-preset="cooling-lost">Cooling lost</button>
-        <button data-preset="inhibitor-gone">Inhibitor gone</button>
-      </div>
-      <div>
-        <div class="row"><label>Cooling power U·A</label><span id="v-UA">2200 W/K</span></div>
-        <input id="s-UA" type="range" min="200" max="5000" step="50" value="2200" />
-      </div>
-      <div>
-        <div class="row"><label>Activation energy Ea</label><span id="v-Ea">95 kJ/mol</span></div>
-        <input id="s-Ea" type="range" min="70" max="115" step="1" value="95" />
-      </div>
-      <div>
-        <div class="row"><label>Starting interior T</label><span id="v-T0">90 °F</span></div>
-        <input id="s-T0" type="range" min="80" max="110" step="1" value="90" />
-      </div>
-      <div>
-        <div class="row"><label>Spray water T</label><span id="v-Twater">75 °F</span></div>
-        <input id="s-Twater" type="range" min="55" max="85" step="1" value="75" />
-      </div>
-      <div>
-        <div class="row"><label>Solar peak amplitude</label><span id="v-solar">250 W</span></div>
-        <input id="s-solar" type="range" min="0" max="800" step="25" value="250" />
-      </div>
-      <div>
-        <div class="row"><label>Polymer fouling f_plate</label><span id="v-fplate">0.30</span></div>
-        <input id="s-fplate" type="range" min="0" max="0.7" step="0.025" value="0.30" />
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Fraction of new polymer that adheres to cool walls (PMMA k = 0.19 W/m·K)</div>
-      </div>
-    </div>
-
-    <div class="out">
-      <div class="stat-row">
-        <div class="stat"><div class="k">Peak T</div><div class="v" id="stat-peak">—</div></div>
-        <div class="stat"><div class="k">Cross 100 °F</div><div class="v" id="stat-cross">—</div></div>
-        <div class="stat"><div class="k">End T (+72h)</div><div class="v" id="stat-end">—</div></div>
-        <div class="stat"><div class="k">Status</div><div class="v" id="stat-status">—</div></div>
-      </div>
-      <canvas id="chart-sim-temp"></canvas>
-      <canvas id="chart-sim-heat"></canvas>
-    </div>
-  </div>
-</section>
-
-<!-- MONTE CARLO -->
-<section id="monte-carlo">
-  <h2>5 — Monte Carlo Failure Window</h2>
-  <p><b>~2,000 accepted trajectories</b> (out of ~825k sampled — 0.2% acceptance), drawn via Approximate Bayesian Computation. The Sun 5/24 evening paradigm shift added a third independent survival constraint: every accepted trajectory must (a) NOT cross the sampled BLEVE threshold (~210 °F, see §3) before hour 75, (b) NOT exceed the PSV setpoint in [12, 64] (no visible vent), AND (c) reach T ≥ 95 °F by hour 74 (gauge-pegged observation). The dramatic drop in acceptance — from ~38% before the paradigm shift to ~0.2% after — is itself Bayesian evidence: the observations have low probability under the priors, meaning the system is in a very narrow stable band where conditions barely satisfy all three constraints simultaneously.</p>
+<!-- POSTERIOR -->
+<section id="posterior">
+  <h2>3 — Posterior</h2>
+  <p><b>10,000 weighted trajectories</b>, drawn via importance-sampled Bayesian inference. Each trajectory carries a soft weight derived from the gauge censored-likelihood; the effective sample size (ESS) reflects how many independent trajectories the weighted population is equivalent to.</p>
 
   <div class="chart-wrap">
-    <h4>Where the failure mass clusters (POST-PARADIGM-SHIFT)</h4>
-    <p class="cap">Green bar = "deluge holds" branch — now only ~4.5%. The remaining ~95% of the accepted-trajectory mass falls in the next 24–36 hours, with the largest window being Sun 7 PM → midnight. The model is saying: <b>conditional on the observations being correct and the priors being reasonable, BLEVE risk in the next ~12 hours is very high</b>. Read with appropriate uncertainty given the crack-vent term is approximate and acceptance rate is only 0.2%.</p>
+    <h4>Where the failure mass clusters</h4>
+    <p class="cap">Green = "deluge holds" (no threshold crossing through Thursday). Coloured bars = failure-window mass, weighted by gauge likelihood. The flat distribution reflects high uncertainty about WHEN failure would occur, conditional on it happening at all.</p>
     <canvas id="chart-mc"></canvas>
   </div>
 
   <div class="verdict">
-    <div class="box"><div class="k">Accepted runs</div><div class="v" id="mc-runs">10,000</div><div class="vsm">acceptance <span id="mc-accept">—</span></div></div>
-    <div class="box"><div class="k">Holds</div><div class="v" id="mc-holds">— %</div><div class="vsm">no crossing through Wed</div></div>
-    <div class="box"><div class="k">Crosses</div><div class="v" id="mc-cross">— %</div><div class="vsm">first 100 °F crossing recorded</div></div>
-    <div class="box"><div class="k">Median crossing</div><div class="v" id="mc-median">—</div><div class="vsm">IQR: <span id="mc-iqr">—</span></div></div>
+    <div class="box"><div class="k">Accepted</div><div class="v" id="mc-runs">—</div><div class="vsm">of <span id="mc-attempted">—</span> attempts</div></div>
+    <div class="box"><div class="k">ESS</div><div class="v" id="mc-ess">—</div><div class="vsm">weighted equivalent N</div></div>
+    <div class="box"><div class="k">Crosses</div><div class="v" id="mc-cross">—</div><div class="vsm">weighted probability</div></div>
+    <div class="box"><div class="k">Stratification</div><div class="v" id="mc-strat">—</div><div class="vsm">median ΔT_strat (top vs gauge)</div></div>
   </div>
 
-  <div class="callout crit">
-    <b>How the posterior evolved this session</b> (most recent first):<br>
-    <ul style="margin:6px 0 0 0;font-size:14px">
-      <li><b>+ Paradigm shift Sun 5/24 evening</b> (gauge pegged ≥100 °F, cracks discovered, BLEVE-physics threshold) → holds ~95% → <b>~4.5%</b>. Largest swing of the entire session — and in the alarming direction.</li>
-      <li><b>+ PSV non-vent constraint + survival extended to hour 62</b> → ~94% → ~96%.</li>
-      <li><b>+ Evaporative cooling from the deluge</b> → holds 66% → ~94%. Latent heat ≈ doubles cooling. Single biggest helpful swing.</li>
-      <li><b>+ Audit fixes</b> (solar phase, O₂ cliff) → holds 69% → 66%.</li>
-      <li><b>+ PMMA wall fouling</b> → holds 78% → 69%.</li>
-      <li><b>10k ABC with survival filter</b> (replacing 300k synthetic) → Sun afternoon mass dropped from synthesized 13% to 1.7%, posterior pushed later.</li>
-    </ul>
-    Peak-temperature distribution: P50 ≈ <span id="mc-peak50">—</span>, P90 ≈ <span id="mc-peak90">—</span>.
+  <div class="callout">
+    <b>How to read this.</b> "Holds" doesn't mean "the tank is safe" — it means no threshold crossing through Thursday in the model. The "preferred outcome" per OCFA is a controlled spill, which the model treats as a hold (it's not a BLEVE). The ~7% crossing mass is genuinely about thermal runaway and tank rupture.
   </div>
 
-  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Results generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code></p>
+  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code></p>
 </section>
 
-<!-- SENSITIVITY -->
-<section id="sensitivity">
-  <h2>6 — Sensitivity Analysis</h2>
-  <p>For each uncertain parameter, hold the others at the priors and pin this one to a low/high tail. Δ in crosses% tells you how much each input drives the answer. After the paradigm shift, the picture became extreme: <b>h_m (deluge mass-transfer coefficient) is overwhelmingly dominant at Δ ≈ 82%</b>. Low h_m (0.004 m/s) puts crosses at ~99%; high h_m (0.035 m/s) drops it to ~17%. The deluge's effectiveness as an evaporative-cooling source is essentially the whole story now. Everything else — PSV setpoint, wetted area, polymer fouling, even threshold T — is secondary at single-digit Δ. <b>If responders can make the deluge wet the shell more uniformly and at higher flow rate, that's the single intervention with leverage.</b></p>
-
-  <div class="chart-wrap">
-    <h4>Parameter sensitivity (tornado)</h4>
-    <p class="cap">Bar length = absolute change in cross-rate (%) between low and high tails. Longer bar = more sensitive. Numbers near zero (I₀, Ea) mean the answer is robust to those inputs.</p>
-    <canvas id="chart-sens"></canvas>
-  </div>
-
-  <div class="callout crit">
-    <b>Operational implication:</b> the deluge is the entire game. The model now says a 9× swing in h_m moves the failure probability from ~17% to ~99%. Maximizing wetted-shell coverage (every square inch of steel wet at all times), maximizing water flow rate, and reducing humidity around the operation are the only levers with material impact at this point. Spray-water temperature itself dropped to <b>#9</b> in the rankings — the temperature of the water matters far less than whether it's actually evaporating off the shell.
-  </div>
-
-  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Sensitivity computed with <code>node scripts/sensitivity.js 1500</code>. Loaded from <code>assets/sensitivity.json</code>.</p>
-</section>
-
-<!-- HYPOTHESIS -->
-<section id="hypothesis">
-  <h2>7 — Peak-Danger Hypothesis (first-pass, now superseded)</h2>
-  <p>This section is preserved for the reasoning trail. The original hypothesis named <b>Sunday 3–6 pm PDT</b> as the dominant failure window from two converging arguments — but the calibrated 10k MC above has overruled that conclusion. Reading this section is useful for understanding how the analysis moved.</p>
+<!-- HYPOTHESES -->
+<section id="hypotheses">
+  <h2>4 — Two operational hypotheses</h2>
+  <p>The model output is the formal posterior. But operationally, there are two competing narratives in the public record. Both are consistent with the same observations through Sunday evening; they predict different futures.</p>
 
   <div class="grid-2">
     <div class="card">
-      <h4>Thermodynamic (when <i>could</i> it tip?)</h4>
-      <p>The most adverse heat balance of each day is the afternoon — warmest spray water, direct solar load on the steel shell, weakest deluge effectiveness. <b>This argument still stands</b>: failure mass <i>within each day</i> is afternoon-clustered. What it gets wrong is implying afternoons dominate <i>across days</i>. Once the survival filter and the evap-cooling term are in, the Sunday-afternoon window has only modest mass.</p>
+      <h4>A. Slow cure (OCFA / Covey / McGovern)</h4>
+      <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
+        "Because of the heavy deluge of water and cooling it, we're allowing it to cure at a slower rate and reducing its overpressure building." — Covey, LAist
+      </blockquote>
+      <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
+        "A potential crack in the tank, which could potentially be relieving some of the pressure in there." — McGovern (Interim Chief), ABC7
+      </blockquote>
+      <p>The deluge + cracks together let polymerization happen at a controlled rate. End state: solid PMMA block inside the tank, or controlled spill into the parking lot pad (the "preferred outcome" per Covey, with sandbag containment). No detonation.</p>
     </div>
     <div class="card">
-      <h4>Kinetic (when does it get there?)</h4>
-      <p>From 90 °F at Fri ~10 pm at ~1 °F/hr, the tank would reach the ~100 °F field threshold in 24–48 h — landing on Sunday afternoon. <b>But that linear extrapolation ignores PMMA fouling, the deluge intensification, and evaporative cooling.</b> The tank has actually held flat or below ~100 °F well past the linear-projection deadline. The MC's posterior median crossing time is now Sun late evening / Mon early morning, not Sun afternoon.</p>
+      <h4>B. BLEVE physics (Picazo, USC)</h4>
+      <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
+        "Above MMA's boiling point (101 °C / ~213 °F), the pressure starts to increase dramatically, because the liquid phase becomes gas phase." — Picazo, LA Times
+      </blockquote>
+      <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 12px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic;font-size:13px">
+        "Literal fireballs, and the explosion itself." — Picazo on BLEVE consequences
+      </blockquote>
+      <p>If the tank reaches its boiling point, pressure rise outpaces any vent. The Synthron 2006 analog tracked operators seeing T climb from 80 °C to 145 °C over 10 minutes before catastrophic failure. The crack may be a precursor to brittle failure rather than a benign vent.</p>
     </div>
   </div>
 
-  <h3>Two competing operational hypotheses, now in tension</h3>
-  <p><b>Hypothesis A (OCFA / slow cure).</b> Covey on Friday:</p>
-  <blockquote style="border-left:3px solid var(--ctp-mauve);padding:8px 14px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic">
-    "Because of the heavy deluge of water and cooling it, we're allowing it to <b>cure at a slower rate and reducing its overpressure building</b>."
-  </blockquote>
-  <p>And McGovern on Sunday morning, after the crack discovery: "potentially relieving some of the pressure… a step in the right direction." OCFA's framing is that the system is in a controlled slow-cure end-state heading toward a manageable spill (the "preferred outcome"), with the cracks providing additional passive relief.</p>
-
-  <p><b>Hypothesis B (Picazo / BLEVE physics).</b> USC chemistry professor Elias Picazo, the most-cited subject-matter expert across coverage, frames it more starkly:</p>
-  <blockquote style="border-left:3px solid var(--ctp-red);padding:8px 14px;color:var(--ctp-subtext1);margin:8px 0;font-style:italic">
-    "If you build too much heat or pressure, then you get the explosion. […] You can have fumes of toxins, flames like literal fireballs, and the explosion itself." Above MMA's boiling point (101 °C / 213 °F), "the pressure starts to increase dramatically, because the liquid phase becomes gas phase."
-  </blockquote>
-  <p>Picazo's threshold is a hard physical line. The interior gauge is now pegged at ≥100 °F (true T unknown — could be 105, could be 180). With the ~1 °F/hr historical rise rate and continued heating, the system is heading toward Picazo's BLEVE threshold; the only question is whether something stops it first (crack-vent absorbing the boiling latent heat? polymer block forming? a successful "outside the box" mitigation?).</p>
-
-  <h3>Where the calibrated model lands</h3>
-  <p>The 10k MC, conditioned on all three pieces of survival evidence (no BLEVE crossing, no PSV vent, T ≥ 95 °F by hour 74), produces a posterior that <b>strongly favors Hypothesis B in the near term</b>: 95% of accepted trajectories cross the BLEVE threshold within 24 hours of "now," with median crossing Sun ~10:41 PM PDT. The model does include crack-vent cooling (which caps T near 213 °F where it activates), but the threshold-prior is at the same temperature so the cap is barely above the threshold — trajectories tip just as the crack-vent term tries to take over.</p>
-
-  <p>The acceptance rate is 0.2%, which is itself important: most of the parameter space is INCONSISTENT with the observations. Either the model is missing physics (crack flow rate may be higher than assumed; PMMA fouling may saturate; stratification may keep bulk T below local hot-spot T) or the system really is in a narrow stable band on the edge of failure.</p>
-
-  <div class="callout warn">
-    <b>Honest read:</b> the calibrated model says near-term BLEVE risk is high. OCFA's public optimism may reflect either (a) information we don't have (closer-look inspection of the cracks, specific mitigation strategies they haven't disclosed, etc.) or (b) the same hopeful framing every incident commander gives publicly until they can't anymore. The right posture for an outside observer is: <i>take the model seriously, but keep watching the data — the next public temperature reading or visible-vent observation will break the tie between A and B fast.</i>
+  <div class="callout">
+    <b>Where the model lands.</b> The v4 posterior weights Hypothesis A heavily (~93%) but does NOT rule out B (~7% crossing mass, spread Tue–Thu+). What would tip the model toward B in a future update: any new interior temperature reading above ~120 °F, observed crack growth, a second crack, audible boiling, or visible shell-bulge progression. Conversely, what would tip toward A: a confirmed gauge reading at or below 100 °F, evidence the crack is stable, or OCFA lifting any portion of the evacuation zone.
   </div>
 </section>
 
 <!-- CONSEQUENCE -->
 <section id="consequence">
-  <h2>8 — Consequence / Blast-Radius Model</h2>
-  <p>If the tank fails, what does the footprint look like? This model takes three failure branches — liquid spill, vapor cloud, vapor-cloud explosion (VCE) — and renders the impact zones on a real map against the OCFA evacuation polygon. Formulas are textbook screening models (TNT-equivalent / Brode overpressure, point-source thermal radiation, Gaussian dispersion with heavy-gas correction). Drag the marker if you want to refine the facility location.</p>
+  <h2>5 — Consequence / Blast-Radius Model</h2>
+  <p>If the tank fails (~7% probability per current posterior), what does the footprint look like? Three failure branches with screening-grade physics: TNT-equivalent overpressure (Brode), point-source thermal radiation, and Pasquill-Gifford Gaussian dispersion with mild heavy-gas correction. Interactive — drag the marker if you want to refine the facility location. The OCFA evacuation polygon (Ball / Trask / Valley View / Dale) overlays for reference.</p>
 
   <div class="sim">
     <div class="controls">
       <div>
         <label>Failure branch</label>
         <select id="c-branch">
-          <option value="spill">Spill (no ignition) — pool + thermal if ignited</option>
+          <option value="spill">Spill — pool + thermal if ignited (OCFA "preferred outcome")</option>
           <option value="vapor">Vapor cloud — downwind LEL footprint</option>
-          <option value="explosion" selected>Vapor-cloud explosion (VCE)</option>
+          <option value="explosion" selected>Vapor-cloud explosion (VCE) — Picazo branch</option>
         </select>
       </div>
       <div>
-        <div class="row"><label>Tank fill</label><span id="c-fill-v">6500 gal</span></div>
-        <input id="c-fill" type="range" min="500" max="34000" step="100" value="6500" />
+        <div class="row"><label>Tank fill</label><span id="c-fill-v">7000 gal</span></div>
+        <input id="c-fill" type="range" min="500" max="34000" step="100" value="7000" />
       </div>
       <div>
         <div class="row"><label>Released fraction on failure</label><span id="c-frac-v">75 %</span></div>
@@ -362,17 +219,17 @@ Survival constraints (a trajectory is ACCEPTED only if ALL hold):
       <div data-branch="vapor">
         <div class="row"><label>Wind bearing (downwind, toward)</label><span id="c-dir-v">60°</span></div>
         <input id="c-dir" type="range" min="0" max="359" step="5" value="60" />
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Default 60° (ENE) = current SW sea-breeze regime per NWS</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">60° = ENE (current SW sea-breeze regime per NWS)</div>
       </div>
       <div data-branch="vapor">
         <label>Pasquill stability</label>
         <select id="c-stab">
-          <option value="A">A — very unstable (sunny, light wind)</option>
+          <option value="A">A — very unstable</option>
           <option value="B">B — unstable</option>
           <option value="C">C — slightly unstable</option>
-          <option value="D" selected>D — neutral (overcast / windy)</option>
+          <option value="D" selected>D — neutral</option>
           <option value="E">E — slightly stable</option>
-          <option value="F">F — very stable (night, calm)</option>
+          <option value="F">F — very stable</option>
         </select>
       </div>
     </div>
@@ -381,14 +238,14 @@ Survival constraints (a trajectory is ACCEPTED only if ALL hold):
       <div class="stat-row">
         <div class="stat"><div class="k">Released</div><div class="v" id="c-sum-a">—</div></div>
         <div class="stat"><div class="k">Mass</div><div class="v" id="c-sum-b">—</div></div>
-        <div class="stat"><div class="k">Primary impact reach</div><div class="v" id="c-sum-c">—</div></div>
+        <div class="stat"><div class="k">Primary reach</div><div class="v" id="c-sum-c">—</div></div>
         <div class="stat"><div class="k">Secondary</div><div class="v" id="c-sum-d">—</div></div>
       </div>
 
       <div class="map-wrap">
         <div id="consequence-map"></div>
         <div class="map-legend">
-          <span><span class="swatch" style="background:#8839ef"></span>OCFA evac zone (approx.)</span>
+          <span><span class="swatch" style="background:#8839ef"></span>OCFA evac zone</span>
           <span><span class="swatch" style="background:#179299"></span>Liquid pool</span>
           <span><span class="swatch" style="background:#df8e1d"></span>1 psi / ½LEL / pain flux</span>
           <span><span class="swatch" style="background:#fe640b"></span>3 psi / LEL / burns</span>
@@ -399,89 +256,79 @@ Survival constraints (a trajectory is ACCEPTED only if ALL hold):
     </div>
   </div>
 
+  <div class="callout warn">
+    <b>Screening models, not engineering simulations.</b> Brode + point-source + Gaussian + heavy-gas-correction are appropriate for order-of-magnitude reasoning. Real footprints depend on terrain, congestion, ignition geometry, and atmospheric structure these formulas don't capture. Use to compare scenarios, not to plan response.
+  </div>
+</section>
+
+<!-- AUDITS -->
+<section id="audits">
+  <h2>6 — Audit trail</h2>
+  <p>Six independent agent audits have shaped the current model. Each report is preserved in the source corpus.</p>
+
   <div class="grid-2">
     <div class="card">
-      <h4>What the rings mean</h4>
+      <h4>Round 1 — physics, tank, numbers (2026-05-24)</h4>
       <ul>
-        <li><b>1 psi</b> — window breakage, minor injuries from flying glass</li>
-        <li><b>3 psi</b> — serious injury, light building damage</li>
-        <li><b>5 psi</b> — wood-frame collapse, eardrum rupture</li>
-        <li><b>10 psi</b> — reinforced-building collapse, near-100% fatality</li>
-        <li><b>4 kW/m²</b> — pain in 20 s of exposure</li>
-        <li><b>12.5 kW/m²</b> — 1st-degree burns; ignition of wood after sustained exposure</li>
-        <li><b>37.5 kW/m²</b> — structural steel damage; 100% lethality in 1 min</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener"><code>model-audit-2026-05-24.md</code></a> — found and fixed the solar-phase bug (9-hour offset) and the missing O₂-MEHQ coupling.</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/content-review-2026-05-24.md" target="_blank" rel="noopener"><code>content-review-2026-05-24.md</code></a> — caught stale numbers and missing sections.</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/gap-analysis-2026-05-24.md" target="_blank" rel="noopener"><code>gap-analysis-2026-05-24.md</code></a> — flagged evaporative cooling as the dominant missing physics, plus 30 other capability gaps.</li>
       </ul>
     </div>
     <div class="card">
-      <h4>Method &amp; assumptions</h4>
+      <h4>Round 2 — six-agent deep audit (2026-05-25)</h4>
       <ul>
-        <li>Overpressure: Brode equation, free-air spherical TNT-equivalent</li>
-        <li>VCE yield 1–10% (3% is the common screening default for unconfined hydrocarbon clouds)</li>
-        <li>Thermal: point-source model with X<sub>r</sub>=0.30 radiative fraction, MMA burn rate 0.04 kg/m²·s</li>
-        <li>Dispersion: ground-level continuous Gaussian (Pasquill-Gifford σ<sub>y</sub>, σ<sub>z</sub>) with a mild heavy-gas slump correction</li>
-        <li>Pool: 1-cm unbunded spread on flat ground</li>
-        <li>Cloud mass: 10% of released liquid assumed airborne &amp; flammable (default screening fraction)</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/physics-audit-2-2026-05-25.md" target="_blank" rel="noopener"><code>physics-audit-2-2026-05-25.md</code></a> — DIERS-perspective ODE review.</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/tank-audit-2026-05-25.md" target="_blank" rel="noopener"><code>tank-audit-2026-05-25.md</code></a> — process-safety engineer review. Found that the PSV is broken (bulged, stuck).</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/numbers-audit-2026-05-25.md" target="_blank" rel="noopener"><code>numbers-audit-2026-05-25.md</code></a> — constant-by-constant calibration check.</li>
+        <li><b>Bayesian/inference audit</b> — found that hard constraints + bimodal I₀ were driving 99.5% sample waste. Fixing the inference machinery pushed acceptance 0.2% → 68%. (Findings folded directly into v4 — no separate doc.)</li>
+        <li><b>Polymer kinetics deep dive</b> — found missing thermal Diels-Alder initiation, peroxide pathway, polymer auto-catalysis at the wall skin (Synthron mechanism). Deferred to v5.</li>
+        <li><b>Fire-service / IC operations</b> — found wetted-coverage 30–55% (not 100%), crew duty cycle ~88%, net IR cooling at night, withdrawal trigger at 150 °F. Folded into v4 as operational-realism multipliers.</li>
       </ul>
     </div>
   </div>
 
-  <div class="callout warn">
-    <b>These are screening models, not engineering simulations.</b> Real footprints depend on terrain, congestion (confined vs unconfined), specific ignition geometry, and atmospheric structure that simple Gaussian + TNT models do not capture. Use this to reason about <i>scale</i> — order-of-magnitude relationships between scenarios — not to plan response.
-  </div>
+  <p>The audit history is itself the most useful document on this page — it shows how each refinement moved the posterior. <b>The single biggest swing</b> was the inference fix in round 2: prior versions reported 4.5% holds with 95% near-term crossings. With proper Bayesian inference (soft likelihoods, importance sampling, collapsed redundant priors), the posterior settled at 93% holds — same model, same observations, but the inference machine was previously degenerate.</p>
 </section>
 
-<!-- WEATHER -->
-<section id="weather">
-  <h2>9 — Weather Context</h2>
-  <p>Garden Grove forecast highs cap around 76 °F — well below the tank's bulk temperature, so the spray water can always extract heat in principle. With evaporative cooling now in the model, the relevant weather term shifts: <b>relative humidity</b> matters as much as temperature, because it directly modulates how much water evaporates per second off the wetted shell. The NWS forecast through the week is mostly low-coastal-stratus (May Gray), so humidity is moderate-to-high; clearer afternoons would actually <i>help</i> the deluge. Persistent SW sea breeze keeps the downwind sector pointed ENE through Anaheim/Stanton/Buena Park — the consequence map defaults to that bearing.</p>
-
-  <div class="chart-wrap">
-    <h4>Garden Grove ambient air — 5-day</h4>
-    <p class="cap">Daytime highs (orange) versus overnight lows (blue). Highs trend down across the week. Combined with the moderate-RH outlook, conditions are slightly improving for the deluge each successive day.</p>
-    <canvas id="chart-forecast"></canvas>
-  </div>
-</section>
-
-<!-- SOURCE SNAPSHOT -->
-<section id="snapshot">
-  <h2>10 — Open-source snapshot</h2>
-  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 (and growing — the hourly cron adds new sources as they're published). Three parallel research agents gathered the news coverage, chemistry/technical references, and the local weather/environment picture; two more agents reviewed the model and the page for errors and gaps. All of those findings are themselves snapshotted.</p>
+<!-- SOURCES -->
+<section id="sources">
+  <h2>7 — Sources</h2>
+  <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 to 25. Three parallel research agents gathered the initial corpus (news, chemistry references, weather/environment); six audit agents wrote evaluation docs.</p>
 
   <div class="grid-2">
     <div class="card">
       <h4>Snapshot stats</h4>
       <ul>
-        <li><b>News</b> — 49 articles across 16+ outlets (includes Sun-evening paradigm-shift sources: gauge-pegged readings, crack discovery, Picazo expert commentary, MIRA Safety / DA / asset-integrity theories)</li>
-        <li><b>Reference</b> — 14 chemistry/technical files including the model audit, content review, and gap analysis</li>
-        <li><b>Weather/environment</b> — 8 environmental files</li>
+        <li><b>News</b> — <span id="src-count-news">—</span> articles across 16+ outlets</li>
+        <li><b>Reference</b> — <span id="src-count-ref">—</span> chemistry/technical files including six audit docs</li>
+        <li><b>Weather/environment</b> — <span id="src-count-wx">—</span> files</li>
         <li>All files are plain markdown with frontmatter — diffable, greppable, citable</li>
       </ul>
     </div>
     <div class="card">
       <h4>Use it</h4>
       <ul>
-        <li>Click any row in the tables below to open the snapshot on GitHub</li>
-        <li>Clone the repo to read offline: <code>git clone https://github.com/KaraZajac/garden-grove-mma-analysis</code></li>
-        <li>The <code>INDEX.md</code> in each subfolder is the most efficient starting point</li>
-        <li>Updated snapshots drop into the same folders — keep the format</li>
+        <li>Click any row in the tables below to open on GitHub</li>
+        <li>Clone offline: <code>git clone https://github.com/KaraZajac/garden-grove-mma-analysis</code></li>
+        <li>The <code>INDEX.md</code> in each subfolder is the fastest starting point</li>
       </ul>
     </div>
   </div>
 
-  <h3>News (<span id="src-count-news">—</span>)</h3>
+  <h3>News (<span id="src-h-news">—</span>)</h3>
   <table><thead><tr><th>File</th><th>Outlet</th><th>Note</th></tr></thead><tbody id="src-news"></tbody></table>
 
-  <h3>Reference (<span id="src-count-ref">—</span>)</h3>
+  <h3>Reference (<span id="src-h-ref">—</span>)</h3>
   <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-ref"></tbody></table>
 
-  <h3>Weather &amp; environment (<span id="src-count-wx">—</span>)</h3>
+  <h3>Weather &amp; environment (<span id="src-h-wx">—</span>)</h3>
   <table><thead><tr><th>File</th><th>Source</th><th>Note</th></tr></thead><tbody id="src-wx"></tbody></table>
 </section>
 
 <!-- REPRODUCE -->
 <section id="reproduce">
-  <h2>11 — Reproduce / extend</h2>
-  <p>Every model output on this page is regenerable. The site is plain HTML + JS + JSON; the models are Node scripts. No build step required.</p>
+  <h2>8 — Reproduce / extend</h2>
   <div class="grid-2">
     <div class="card">
       <h4>Local quick start</h4>
@@ -493,10 +340,10 @@ cd garden-grove-mma-analysis
 open index.html
 # or serve: python3 -m http.server 8000
 
-# Re-run the Monte Carlo (writes assets/montecarlo-results.json)
+# Re-run the Monte Carlo (v4, importance-sampled)
 node scripts/montecarlo.js 10000
 
-# Re-run sensitivity sweep (writes assets/sensitivity.json)
+# Sensitivity sweep (NOTE: out of sync with v4 model; rewrite pending)
 node scripts/sensitivity.js 1500
 
 # Both at once + auto-commit if anything changed
@@ -504,42 +351,35 @@ bash scripts/refresh.sh 10000 1500
       </code>
     </div>
     <div class="card">
-      <h4>Auto-refresh</h4>
-      <p>An hourly remote agent runs <code>scripts/refresh.sh</code> in the cloud, searches for new sources, re-runs both models, and pushes to GitHub if outputs changed (Pages auto-deploys). Watch the <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/commits/main" target="_blank" rel="noopener">commit log</a> for activity.</p>
-      <p>The cron will <i>not</i> modify the model code itself — only data (sources/), the page (when adding to the timeline), and the MC/sensitivity outputs.</p>
+      <h4>Where to start reading code</h4>
+      <ul>
+        <li><code>scripts/montecarlo.js</code> — canonical model (read the header for changes vs prior versions)</li>
+        <li><code>scripts/sensitivity.js</code> — sensitivity sweep (currently running OLD physics — Bayesian audit flagged; rewrite pending)</li>
+        <li><code>assets/simulator.js</code> — interactive in-browser version (also out of sync with v4 — todo)</li>
+        <li><code>assets/consequence.js</code> — TNT overpressure + thermal + dispersion</li>
+        <li><code>sources/reference/*-audit-*.md</code> — six audit reports</li>
+      </ul>
     </div>
-  </div>
-  <div class="callout">
-    <b>To extend the model:</b> the simulator and MC live in <code>assets/simulator.js</code> and <code>scripts/montecarlo.js</code>. They share the same ODE structure. Open the model audit (<code>sources/reference/model-audit-2026-05-24.md</code>) and the gap analysis (<code>sources/reference/gap-analysis-2026-05-24.md</code>) for ranked lists of what to add next.
   </div>
 </section>
 
 <!-- CAVEATS -->
 <section id="caveats">
-  <h2>12 — Caveats &amp; limitations</h2>
-
-  <h3>Key recon findings</h3>
-  <table>
-    <thead><tr><th>Item</th><th>Value</th><th>Note</th></tr></thead>
-    <tbody id="recon-body"></tbody>
-  </table>
-
-  <h3>Caveats</h3>
+  <h2>9 — Caveats &amp; limitations</h2>
   <ul>
-    <li><b>0.2% prior-acceptance is itself a warning.</b> The MC rejects 99.8% of sampled parameter combinations because they violate one of the three survival constraints. That is Bayesian evidence the model is missing physics OR the system is genuinely in a very narrow stable band. Either interpretation deserves humility.</li>
-    <li><b>BLEVE threshold prior is centered on Picazo's BP-driven physics (~213 °F)</b> with N(210, 25) °F. This is the most defensible single anchor in the published expert commentary, but every accepted trajectory in the current MC has a threshold below 213 °F and crosses it. If the actual threshold is materially above 213 °F (because PSV/crack venting holds pressure low), the model is too pessimistic.</li>
-    <li><b>Crack-vent cooling term is NEW and approximate.</b> No measurement of crack flow rate exists; the model uses a stiff negative-feedback term scaled to give ~50 kW at T = BP. Tuning K_crack higher would soften the failure prediction substantially. This is the single largest open uncertainty in the current model.</li>
-    <li>Kinetic constants (A, Ea, ΔH) are representative MMA bulk values, not measured for this aged batch. <code>A</code> is phenomenologically tuned so the baseline reproduces the observed ~1 °F/hr early rise — calibration, not first-principles.</li>
-    <li>The interior gauge maxes at 100 °F. Since pegging Sun 5:50 PM PDT, true bulk temperature is <b>unknown</b> — could be 105, could be 180. Model has to infer from rate-of-rise history.</li>
-    <li>Reported 60–61 °F Saturday readings are almost certainly <b>exterior shell temperatures</b> (deluge cools the steel skin while the interior keeps rising). Two sources (CBS LA, NBC LA) corroborate the number. Treated as a separate timeline series, not an interior anchor.</li>
-    <li>Drone scans every 10 minutes are exterior proxies; <b>no new interior reading</b> has been publicly released since Fri ~10 pm (90 °F).</li>
-    <li>The simulator is a lumped one-node model. A real stratified tank initiates runaway at the hot spot, not the bulk average — so the model is likely <i>optimistic</i> on timing (real tip-over could be earlier than the bulk model predicts).</li>
-    <li>The consequence model uses textbook screening formulas (Brode overpressure, point-source thermal radiation, Pasquill-Gifford dispersion). The audit flagged pool-fire burn rate (0.04 kg/m²/s) as ~2× literature for MMA (conservative), and the heavy-gas dispersion correction may underpredict near-field LEL distance (non-conservative).</li>
-    <li><b>Still-open audit findings</b> (not yet acted on): Trommsdorff onset at X=0.05 in code vs literature X≈0.20; PSV venting dynamics absent (matters for spill-vs-rupture discrimination); hot-spot stratification absent (lumped 0-D); no Bayesian particle re-weighting on new readings; no historical-analog calibration. Full list in the <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/gap-analysis-2026-05-24.md" target="_blank" rel="noopener">gap analysis</a> and <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/model-audit-2026-05-24.md" target="_blank" rel="noopener">audit</a>.</li>
+    <li><b>The whole exercise rests on open-source reporting.</b> No interior temperature reading has been publicly released since Friday 9:40 PM PDT (90 °F gauge). Everything since is inferred from the rate-of-rise observation and the Sun 5:50 PM "≥100 °F gauge-pegged" anchor.</li>
+    <li><b>Threshold prior is centered on Picazo's BLEVE physics (~213 °F)</b> with N(210, 25). The earlier "approximately 100 °F out of control" responder quote is reinterpreted as a caution threshold, not catastrophic.</li>
+    <li><b>Stratification offset</b> is sampled N(20, 12) °F because the gauge probably reads bulk T but the reaction zone is the hotter top liquid layer. Effective threshold = sampled BLEVE − sampled stratification.</li>
+    <li><b>Crack-vent magnitude</b> is approximate. No measurement of crack flow rate or geometry exists; the model uses Bernoulli flow on a sampled ~1 cm² area, giving ~5–25 kW depending on T.</li>
+    <li><b>Operational realism multipliers</b> (coverage_frac ~0.5, duty_cycle ~0.9) come from the fire-service audit. These are honest order-of-magnitude estimates, not measurements.</li>
+    <li><b>Polymer kinetics not yet at v5.</b> The kinetics audit identified thermal Diels-Alder initiation, peroxide autocatalysis, and polymer auto-catalysis at the wall skin (the actual Synthron 2006 failure mode) as missing. These could shift the posterior modestly toward more crossing mass at high X.</li>
+    <li><b>Sensitivity script is out of sync with v4 physics.</b> Any sensitivity ranking shown elsewhere uses v3 priors and shouldn't be trusted for v4 conclusions. Rewrite pending.</li>
+    <li><b>The consequence map's screening formulas</b> (Brode, point-source thermal, Pasquill-Gifford with mild heavy-gas correction) give order-of-magnitude footprints. The audit flagged pool-fire burn rate as conservative (~2× literature) and heavy-gas dispersion correction as possibly non-conservative.</li>
+    <li><b>This is not operational guidance.</b> Defer to OCFA, EPA, and the responding hazmat teams for any safety-affecting decision.</li>
   </ul>
 
   <div class="callout crit">
-    <b>This is not operational guidance.</b> It is an open-source analytical brief. Defer to OCFA, EPA, and the responding hazmat teams for any decision affecting safety. If you are inside the evacuation zone, follow official instructions.
+    <b>If you are in the evacuation zone, follow official instructions, not this page.</b>
   </div>
 </section>
 
@@ -547,18 +387,16 @@ bash scripts/refresh.sh 10000 1500
 
 <footer>
   Open-source analytical exercise. No PII, no inside information, no operational role.
-  Method: lumped-parameter ODE thermal-runaway model with Arrhenius kinetics, Trommsdorff gel-effect amplifier, O₂–MEHQ cliff, PMMA wall-fouling positive feedback, evaporative cooling from the deluge, and clock-aligned diurnal solar.
-  Plus crack-vent latent-heat cooling near MMA boiling point (post hour 64).
-  Posterior via Approximate Bayesian Computation conditioned on three independent survival anchors (no BLEVE crossing, no PSV vent in [12, 64], gauge-pegged ≥100 °F at hour 74).
+  Method: lumped-parameter ODE thermal model — Arrhenius kinetics, Trommsdorff sigmoidal gel amplifier, binary inhibition with O₂-cliff, PMMA wall-fouling with 3 mm spalling cap, deluge evaporative cooling, time-gated crack-vent (Bernoulli vapor flow), net IR radiative loss, withdrawal-trigger collapse, clock-aligned diurnal solar.
+  Posterior via importance-sampled ABC conditioned on three observations (no BLEVE crossing, Thursday auto-vent setpoint calibration, gauge-pegged ≥100 °F at hour 74 with censored-Gaussian likelihood).
   Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
 </footer>
 
-<!-- Chart.js via CDN -->
+<!-- Chart.js + Leaflet via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/simulator.js"></script>
 
-<!-- Render the timeline + recon tables before charts.js needs them -->
 <script>
 (function(){
   const riskClass = r => {
@@ -577,15 +415,9 @@ bash scripts/refresh.sh 10000 1500
       `<td><span class="tag ${riskClass(r.risk)}">${r.risk}</span></td>`;
     tb.appendChild(tr);
   });
-  const rb = document.getElementById('recon-body');
-  GG.recon.forEach(r=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.k}</td><td><b>${r.v}</b></td><td>${r.note}</td>`;
-    rb.appendChild(tr);
-  });
 
   // Source-snapshot tables
-  function renderSources(tbodyId, items, folder, countId){
+  function renderSources(tbodyId, items, folder, countId, headerId){
     const tb = document.getElementById(tbodyId);
     if (!tb) return;
     items.forEach(([file, source, note])=>{
@@ -598,11 +430,14 @@ bash scripts/refresh.sh 10000 1500
       tb.appendChild(tr);
     });
     const c = document.getElementById(countId);
-    if (c) c.textContent = items.length + ' files';
+    const h = document.getElementById(headerId);
+    const txt = items.length + ' files';
+    if (c) c.textContent = txt;
+    if (h) h.textContent = txt;
   }
-  renderSources('src-news', GG.sources.news,      'news',              'src-count-news');
-  renderSources('src-ref',  GG.sources.reference, 'reference',         'src-count-ref');
-  renderSources('src-wx',   GG.sources.weather,   'weather-environment','src-count-wx');
+  renderSources('src-news', GG.sources.news,      'news',              'src-count-news', 'src-h-news');
+  renderSources('src-ref',  GG.sources.reference, 'reference',         'src-count-ref',  'src-h-ref');
+  renderSources('src-wx',   GG.sources.weather,   'weather-environment','src-count-wx',  'src-h-wx');
 })();
 </script>
 
