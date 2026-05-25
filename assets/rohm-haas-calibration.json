@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-05-25T17:09:51.068Z",
+  "target": {
+    "vent_frac": 0.1,
+    "vent_duration_h": 13.5,
+    "ruptured": false
+  },
+  "n_runs": 200,
+  "duration_sec": 0.023,
+  "summary": {
+    "ruptured_pct": 8.5,
+    "vented_pct": 47,
+    "target_window_pct": 0,
+    "vented_frac_p50": 0.0028632287810211876,
+    "vented_frac_p90": 0.115526153482025,
+    "vent_duration_p50_h": null,
+    "peak_T_F_p50": 131.06005562501846,
+    "peak_T_F_p90": 367.15180791984255,
+    "peak_P_psig_p50": 3.59968285485282,
+    "final_X_p50": 1,
+    "final_X_p90": 1
+  }
+}

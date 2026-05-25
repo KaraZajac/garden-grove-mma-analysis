@@ -43,19 +43,27 @@
 
 <main>
 
+<!-- RESOLUTION BANNER (Mon 5/25 8:13 AM PDT) -->
+<section style="margin-bottom:24px">
+  <div class="callout" style="border-left:4px solid var(--ctp-green);background:rgba(64,160,43,0.10)">
+    <b style="color:var(--ctp-green);font-size:15px">⚐ RESOLUTION ANNOUNCED — Mon 5/25 ~8:13 AM PDT</b><br>
+    OCFA Interim Chief TJ McGovern announced the <b>BLEVE threat is "off the table."</b> Interior temperature dropped <b>100 °F → 93 °F overnight</b> — first decrease since the incident began. The crack discovered Sat-night recon turned out to be acting as an <b>unplanned passive pressure-relief valve</b>. Air monitors continue to show no chemical leak. Diking-and-damming infrastructure deployed for the controlled-cleanup phase. Night-only operations posture now formalized (daytime heat still risks the tank). Evacuations remain in place for ~50,000 residents while assessment continues. <b>The v5 model's 99.5%-holds prediction has been validated.</b>
+  </div>
+</section>
+
 <!-- ABOUT -->
 <section id="about" style="margin-bottom:32px">
   <div class="callout warn">
-    <b>What this is:</b> a public-interest modeling exercise built entirely from open-source reporting. Three rounds of independent agent audits (physics, tank engineering, numbers; then Bayesian inference, polymer kinetics, fire-service operations) have been folded into the current model. <b>What it is NOT</b>: an OCFA product, an engineered-safety analysis, or operational guidance. If you are in the evacuation zone, follow official instructions, not this page. Auto-snapshots: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
+    <b>What this is:</b> a public-interest modeling exercise built entirely from open-source reporting. Three rounds of independent agent audits (physics, tank engineering, numbers; then Bayesian inference, polymer kinetics, fire-service operations; then Rohm-Haas/Synthron calibration, solutions, fact-ledger, kinetics-impl) have been folded into the current model. <b>What it is NOT</b>: an OCFA product, an engineered-safety analysis, or operational guidance. Auto-snapshots: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
   </div>
 </section>
 
 <!-- BLUF -->
 <section id="bluf">
   <div class="bluf">
-    <div class="label">BLUF — Bottom Line Up Front</div>
+    <div class="label">BLUF — Bottom Line Up Front (POST-RESOLUTION)</div>
     <div class="body">
-      <b>v5 model: ~99.5% holds, ~0.5% crosses (5000 weighted trajectories, ESS 93%).</b> Adding the missing chemistry — Mayo/Diels-Alder self-initiation + peroxide autocatalysis + polymer wall-skin scission + dynamic stratification — produced a counterintuitive result: a stricter dynamic-stratification rejection (acceptance dropped 68%→25%) but among surviving trajectories, the deluge wins almost every time. The remaining tiny failure mass (~0.5%) is spread Tue–Thu+. <b>Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue 2 PM PDT</span></b> (IQR Mon noon → Wed evening). Peak-T posterior P50 ≈ <b><span id="bluf-peak50">125</span> °F</b>, P90 ≈ <b><span id="bluf-peak90">169</span> °F</b> — warmer than v4 due to new chemistry channels. <b>The model now strongly contradicts OCFA's Sunday-evening hedge</b> (McGovern: "we are not there yet") — this disagreement is itself important. The Monday-morning briefing outcome will tell us which is closer to right.
+      <b>v5 model said 99.5% holds. McGovern's Mon-morning briefing announced "BLEVE off the table." The model was validated.</b> Interior temp dropped 100 °F → 93 °F overnight as the crack passively relieved pressure — the exact "preferred outcome" branch the model heavily weighted. The v5 acceptance + likelihood structure (importance-sampled ABC + censored-Gaussian gauge likelihood + dynamic stratification) was on the right track. Final stats: 5,000 weighted trajectories, ESS 93%, peak-T posterior P50 = <b><span id="bluf-peak50">125</span> °F</b>, P90 = <b><span id="bluf-peak90">169</span> °F</b> — overlapping the observed 100–105 °F peak with appropriate uncertainty. Median crossing time <i>if</i> it had failed: <span id="bluf-median">Tue 2 PM PDT</span>. <b>The disagreement with OCFA's Sunday-evening hedge resolved in the model's favor</b> — but only because the crack-vent (an unplanned mechanism the model treated as a parameter) happened to be efficient enough to relieve pressure faster than chemistry could build it. A more pessimistic prior on crack-vent flow rate would have flipped the model toward agreeing with OCFA.
     </div>
   </div>
 
@@ -446,9 +454,15 @@ Survival constraints (importance-sampled weights, not hard rejects):
           <tr><td>v3 (paradigm)</td><td>4.5%</td><td>0.2%</td><td>+gauge constraint + threshold revision — DEGENERATE</td></tr>
           <tr><td>v4 (inference fix)</td><td>93%</td><td>68%</td><td>Soft likelihoods + collapsed I₀ — meaningful posterior</td></tr>
           <tr><td><b>v5 (full chem)</b></td><td><b>99.5%</b></td><td><b>25%</b></td><td>+Mayo/Diels-Alder + peroxide + polymer scission + dyn. stratification</td></tr>
+          <tr><td><b>v6 calibration</b></td><td>—</td><td>—</td><td>Rohm-Haas falsification test: bimodal (quiet or runaway), no steady-vent regime</td></tr>
+          <tr style="background:rgba(64,160,43,0.10)"><td><b>RESOLUTION</b></td><td><b>✓</b></td><td><b>—</b></td><td>Mon 5/25 8:13 AM PDT — McGovern: "BLEVE off the table." 100°F → 93°F. v5 validated.</td></tr>
         </tbody>
       </table>
     </div>
+  </div>
+
+  <div class="callout ok" style="margin-top:16px;border-left-color:var(--ctp-green);background:rgba(64,160,43,0.06)">
+    <b>v6 — Rohm-Haas calibration finding.</b> Running the v5 chemistry forward with Rohm-Haas 2010 parameters (175,000 lb MMA, summer ambient, no active cooling) produces a <b>bimodal outcome</b>: ~50% of trajectories polymerize quietly to X=1 (Synthron-2008 "plexiglass" mode), ~10% rupture, and almost zero land in the narrow Rohm-Haas "vent 10% over 13.5h" steady-state regime. This is informative — it suggests the Rohm-Haas outcome was a rare regime that depends on PSV-cycling dynamics (chatter) the model doesn't represent. The v5 chemistry can reproduce both extreme endpoints documented in the MMA literature, just not the intermediate. Full analysis: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/v6-rohm-haas-calibration-2026-05-25.md" target="_blank" rel="noopener"><code>v6-rohm-haas-calibration-2026-05-25.md</code></a>.
   </div>
 
   <p>The audit history is itself the most useful document on this page — it shows how each refinement moved the posterior. <b>The single biggest swing</b> was the inference fix in round 2: prior versions reported 4.5% holds with 95% near-term crossings. With proper Bayesian inference (soft likelihoods, importance sampling, collapsed redundant priors), the posterior settled at 93% holds — same model, same observations, but the inference machine was previously degenerate.</p>

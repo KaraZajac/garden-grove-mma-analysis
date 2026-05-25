@@ -81,37 +81,64 @@ function irCooling(T_K, p, tHours){
   return eps * sigma * A_ext * (Math.pow(T_shell, 4) - Math.pow(Tsky, 4));
 }
 
+// v5 chemistry constants (sync with montecarlo.js)
+const M0_MOL_L = 9.4, C_TH = 0.085;
+const ALPHA_STRAT = 1.5, DT_STRAT_MAX_F = 60;
+const RHO_HH = 0.01, PHI_SKIN = 0.02;
+
 function step(s, p){
-  const k = p.A * Math.exp(-p.Ea / (R * s.T));
+  const dTstratF_eff = Math.min(DT_STRAT_MAX_F, (p.dTstratF_base || 15) * (1 + ALPHA_STRAT * s.X));
+  const dTstrat_K = dTstratF_eff * 5/9;
+  const T_rxn = s.T + dTstrat_K;
+  p.__dTstratF_eff = dTstratF_eff;
+
+  const k = p.A * Math.exp(-p.Ea / (R * T_rxn));
   const inhibFactor = 1 / (1 + Math.exp(-(I_CRIT - s.I)/0.005));
-  const dX = k * Math.max(0, 1 - s.X) * inhibFactor * gel(s.X);
+  const dX_inhib = k * Math.max(0, 1 - s.X) * inhibFactor * gel(s.X);
+
+  const M = M0_MOL_L * Math.max(0, 1 - s.X);
+  const Ri_th = p.A_th * Math.exp(-p.Ea_th / (R * T_rxn)) * M * M;
+  const eta_ox = Math.min(1, Math.max(0, s.I / (p.I0 || 0.2)));
+  const k_d = p.A_d * Math.exp(-p.Ea_d / (R * T_rxn));
+  const Ri_perox = 2 * (p.f_d || 0.5) * k_d * Math.max(0, s.ROOH || 0);
+  const T_skin = s.T + 0.5 * dTstrat_K;
+  const k_p_th = p.A_p * Math.exp(-p.Ea_p / (R * T_skin));
+  const polyGate = 1 / (1 + Math.exp(-(s.X - 0.30)/0.04));
+  const Ri_poly = 2 * (p.f_p || 0.5) * k_p_th * RHO_HH * s.X * M0_MOL_L * polyGate * PHI_SKIN;
+  const Ri_total = Ri_th + Ri_perox + Ri_poly;
+  const dX_chem = C_TH * Math.sqrt(Math.max(0, Ri_total)) * Math.max(0, 1 - s.X) * gel(s.X) / M0_MOL_L;
+
+  const dX = dX_inhib + dX_chem;
   const o2_collapse = (s.X > 1e-5) ? 1e-3 * s.I : 0;
   const dI = -p.cInh * k - o2_collapse;
+  const dROOH = eta_ox * Ri_th - k_d * Math.max(0, s.ROOH || 0);
+
   const deltaH_eff = p.deltaH * (1 - 0.07 * s.X);
-  const Qgen    = p.mMonomer * (deltaH_eff / 0.10012) * dX;
+  const Qgen = p.mMonomer * (deltaH_eff / 0.10012) * dX;
   const opsCool = (p.coverageFrac ?? 0.5) * (p.dutyCycle ?? 0.9);
-  const UA_eff  = effectiveUA(p.UA, s.X, p) * opsCool;
-  const Q_evap  = evapCooling(s.T, p) * opsCool;
+  const UA_eff = effectiveUA(p.UA, s.X, p) * opsCool;
+  const Q_evap = evapCooling(s.T, p) * opsCool;
   const Q_crack = crackVentCooling(s.T, p, s.t);
-  const Q_ir    = irCooling(s.T, p, s.t);
+  const Q_ir = irCooling(s.T, p, s.t);
   const withdrawn = K2F(s.T) > 150;
   const withdrawal_factor = withdrawn ? 0.1 : 1.0;
   const Qcool = (UA_eff * (s.T - p.Twater) + Q_evap + Q_crack) * withdrawal_factor
               + Q_ir - solar(s.t, p.solarAmp);
   const Cp_eff = p.Cp - 434 * s.X;
-  return { dT:(Qgen-Qcool)/(p.mMonomer*Cp_eff), dX, dI };
+  return { dT:(Qgen-Qcool)/(p.mMonomer*Cp_eff), dX, dI, dROOH };
 }
 function rk4(s, dt, p){
   const k1=step(s,p);
-  const s2={t:s.t+dt/2,T:s.T+k1.dT*dt/2,X:clamp01(s.X+k1.dX*dt/2),I:Math.max(0,s.I+k1.dI*dt/2)};
+  const s2={t:s.t+dt/2,T:s.T+k1.dT*dt/2,X:clamp01(s.X+k1.dX*dt/2),I:Math.max(0,s.I+k1.dI*dt/2),ROOH:Math.max(0,(s.ROOH||0)+k1.dROOH*dt/2)};
   const k2=step(s2,p);
-  const s3={t:s.t+dt/2,T:s.T+k2.dT*dt/2,X:clamp01(s.X+k2.dX*dt/2),I:Math.max(0,s.I+k2.dI*dt/2)};
+  const s3={t:s.t+dt/2,T:s.T+k2.dT*dt/2,X:clamp01(s.X+k2.dX*dt/2),I:Math.max(0,s.I+k2.dI*dt/2),ROOH:Math.max(0,(s.ROOH||0)+k2.dROOH*dt/2)};
   const k3=step(s3,p);
-  const s4={t:s.t+dt,T:s.T+k3.dT*dt,X:clamp01(s.X+k3.dX*dt),I:Math.max(0,s.I+k3.dI*dt)};
+  const s4={t:s.t+dt,T:s.T+k3.dT*dt,X:clamp01(s.X+k3.dX*dt),I:Math.max(0,s.I+k3.dI*dt),ROOH:Math.max(0,(s.ROOH||0)+k3.dROOH*dt)};
   const k4=step(s4,p);
   return {T:s.T+(k1.dT+2*k2.dT+2*k3.dT+k4.dT)*dt/6,
           X:clamp01(s.X+(k1.dX+2*k2.dX+2*k3.dX+k4.dX)*dt/6),
-          I:Math.max(0,s.I+(k1.dI+2*k2.dI+2*k3.dI+k4.dI)*dt/6)};
+          I:Math.max(0,s.I+(k1.dI+2*k2.dI+2*k3.dI+k4.dI)*dt/6),
+          ROOH:Math.max(0,(s.ROOH||0)+(k1.dROOH+2*k2.dROOH+2*k3.dROOH+k4.dROOH)*dt/6)};
 }
 
 function normalCdf(z){
@@ -124,22 +151,24 @@ function gaugeLikelihood(peakF_by_obs){
   return normalCdf((peakF_by_obs - 100 + SIGMA_GAUGE_F) / SIGMA_GAUGE_F);
 }
 
-function trajectory(p, startH, endH, surviveH, bleveThresholdF, dTstratF){
-  const effectiveThresholdF = bleveThresholdF - dTstratF;
-  let s = { t: startH, T: p.T0, X: 0, I: p.I0 };
+function trajectory(p, startH, endH, surviveH, bleveThresholdF, dTstratBaseF){
+  p.dTstratF_base = dTstratBaseF;
+  let s = { t: startH, T: p.T0, X: 0, I: p.I0, ROOH: p.ROOH0 ?? 5e-5 };
   let crossed=null, peakF=K2F(s.T), peakF_by_obs=K2F(s.T);
   let t=startH;
   while (t < endH){
     const TF = K2F(s.T);
     if (TF > peakF) peakF = TF;
     if (t <= T_OBS_HOUR && TF > peakF_by_obs) peakF_by_obs = TF;
+    const dTstratNow = Math.min(DT_STRAT_MAX_F, dTstratBaseF * (1 + ALPHA_STRAT * s.X));
+    const effectiveThresholdF = bleveThresholdF - dTstratNow;
     if (crossed === null && TF >= effectiveThresholdF) crossed = t;
     if (crossed !== null && crossed < surviveH) break;
     if (TF > 280) break;
     const dt = TF > 200 ? 5 : (TF > 130 ? 20 : 60);
     const nxt = rk4(s, dt, p);
     t += dt/3600;
-    s.t = t; s.T = nxt.T; s.X = nxt.X; s.I = nxt.I;
+    s.t = t; s.T = nxt.T; s.X = nxt.X; s.I = nxt.I; s.ROOH = nxt.ROOH;
   }
   const hardOK = !(crossed !== null && crossed < surviveH);
   const weight = hardOK ? gaugeLikelihood(peakF_by_obs) : 0;
@@ -172,11 +201,21 @@ function sampleParams(overrides){
     A_crack: Math.exp(Math.log(1e-4) + 0.7 * randn()),
     coverageFrac: clamp(0.5 + 0.12 * randn(), 0.25, 0.80),
     dutyCycle: clamp(0.88 + 0.06 * randn(), 0.70, 0.98),
+    // v5 chemistry priors
+    A_th: 1.0e8,
+    Ea_th: clamp(115000 + 8000 * randn(), 100000, 130000),
+    A_d: 1.0e14,
+    Ea_d: clamp(120000 + 8000 * randn(), 105000, 135000),
+    f_d: 0.5,
+    A_p: 1.0e12,
+    Ea_p: clamp(130000 + 10000 * randn(), 110000, 150000),
+    f_p: 0.5,
+    ROOH0: Math.exp(Math.log(5e-5) + 0.8 * randn()),
   };
   return Object.assign(p, overrides);
 }
 function sampleBleveThresholdF(){ return clamp(210 + 15 * randn(), 180, 250); }
-function sampleStratificationF(){ return clamp(20 + 12 * randn(), 0, 50); }
+function sampleStratificationF(){ return clamp(15 + 8 * randn(), 0, 30); }
 
 // Weighted MC pass with parameter overrides
 function runMC(nTarget, overrides){
@@ -245,6 +284,15 @@ const sweeps = [
     low: { coverageFrac: 0.30 }, high: { coverageFrac: 0.75 } },
   { name: 'dutyCycle (deluge uptime)',
     low: { dutyCycle: 0.70 }, high: { dutyCycle: 0.98 } },
+  // v5 chemistry parameters
+  { name: 'Ea_th (Diels-Alder activation)',
+    low: { Ea_th: 100000 }, high: { Ea_th: 130000 } },
+  { name: 'Ea_d (peroxide decomposition)',
+    low: { Ea_d: 105000 }, high: { Ea_d: 135000 } },
+  { name: 'Ea_p (PMMA scission activation)',
+    low: { Ea_p: 110000 }, high: { Ea_p: 150000 } },
+  { name: 'ROOH₀ (initial peroxide)',
+    low: { ROOH0: 5e-6 }, high: { ROOH0: 5e-3 } },
 ];
 
 const N = parseInt(process.argv[2] || '1000', 10);
