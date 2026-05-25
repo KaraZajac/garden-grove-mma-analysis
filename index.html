@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Garden Grove MMA Tank — Thermal-Runaway Analysis (v4)</title>
+<title>Garden Grove MMA Tank — Thermal-Runaway Analysis (v5)</title>
 <meta name="description" content="Open-source thermal-runaway analysis of the Garden Grove (CA) methyl methacrylate storage-tank incident. Six-audit-pass calibrated model with importance-sampled Bayesian posterior." />
 <link rel="stylesheet" href="assets/styles.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -15,12 +15,13 @@
 
 <header class="site">
   <h1>Garden Grove MMA Tank — Thermal-Runaway Analysis</h1>
-  <div class="sub">A calibrated, six-audit-pass open-source model of the GKN Aerospace MMA storage-tank incident. Bayesian posterior over future failure timing, conditioned on observed survival to <span id="hdr-now">Sun 5/24 6:40 PM PDT</span>.</div>
+  <div class="sub">An open-source thermal-runaway model of the GKN Aerospace MMA storage-tank incident. <b>v5</b>: full chemistry (Mayo/Diels-Alder + peroxide autocatalysis + polymer skin-scission + dynamic stratification + 11 inhibition/cooling/operational terms) calibrated through nine independent agent audits. Importance-sampled Bayesian posterior over future failure timing.</div>
   <div class="meta">
-    <span><b>Model:</b> v4 (importance-sampled, post-six-audit)</span>
-    <span><b>Last gauge reading:</b> ≥100 °F at hr 74 (gauge-pegged)</span>
-    <span><b>Cracks observed:</b> hr 64 (passively venting)</span>
-    <span><b>Posterior:</b> <span id="hdr-holds">— %</span> holds through Thu</span>
+    <span><b>Model:</b> v5 — 9-audit calibration</span>
+    <span><b>Last interior reading:</b> 90 °F at hr 30 (Fri)</span>
+    <span><b>Gauge pegged ≥100 °F:</b> hr 74 (Sun 5:50 PM)</span>
+    <span><b>Cracks observed:</b> hr 64</span>
+    <span><b>Posterior:</b> <span id="hdr-holds">— %</span> holds</span>
   </div>
 </header>
 
@@ -31,6 +32,8 @@
   <a href="#model">Model</a>
   <a href="#posterior">Posterior</a>
   <a href="#hypotheses">Hypotheses</a>
+  <a href="#solutions">Solutions</a>
+  <a href="#calibration">Calibration</a>
   <a href="#consequence">Consequence</a>
   <a href="#audits">Audits</a>
   <a href="#sources">Sources</a>
@@ -52,7 +55,7 @@
   <div class="bluf">
     <div class="label">BLUF — Bottom Line Up Front</div>
     <div class="body">
-      <b>v4 model says ~93% holds; OCFA leadership has now publicly hedged.</b> Sunday evening McGovern walked back the morning's "positive intel" framing: <i>"We are not there yet; we need to run this operation tonight."</i> An all-night recon mission is underway to determine whether the crack is a benign vent or a precursor to rupture. The model's <b><span id="bluf-holds">~93</span>%</b> holds through Thursday is the calibrated posterior (10,000 weighted trajectories, 68% acceptance, ESS ≈ 50%) — but it conditions on the survival history up to Sun ~6 PM, before McGovern's walkback. The ~7% failure mass is spread across Tue–Thu+. Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue late afternoon PDT</span>. Peak-T posterior P50 ≈ <span id="bluf-peak50">109</span> °F, P90 ≈ <span id="bluf-peak90">152</span> °F. <b>School closures extended through Fri 5/29</b> — emergency managers expect the incident to run through the week.
+      <b>v5 model: ~99.5% holds, ~0.5% crosses (5000 weighted trajectories, ESS 93%).</b> Adding the missing chemistry — Mayo/Diels-Alder self-initiation + peroxide autocatalysis + polymer wall-skin scission + dynamic stratification — produced a counterintuitive result: a stricter dynamic-stratification rejection (acceptance dropped 68%→25%) but among surviving trajectories, the deluge wins almost every time. The remaining tiny failure mass (~0.5%) is spread Tue–Thu+. <b>Median crossing time <i>if</i> it fails: <span id="bluf-median">Tue 2 PM PDT</span></b> (IQR Mon noon → Wed evening). Peak-T posterior P50 ≈ <b><span id="bluf-peak50">125</span> °F</b>, P90 ≈ <b><span id="bluf-peak90">169</span> °F</b> — warmer than v4 due to new chemistry channels. <b>The model now strongly contradicts OCFA's Sunday-evening hedge</b> (McGovern: "we are not there yet") — this disagreement is itself important. The Monday-morning briefing outcome will tell us which is closer to right.
     </div>
   </div>
 
@@ -88,39 +91,57 @@
 
   <div class="card">
     <code style="font-family:var(--mono);font-size:13px;color:var(--ink);display:block;white-space:pre-line">
-k(T)         = A · exp(−Ea / R·T)                            Arrhenius rate
-g(X)         = 1 + 50 · σ((X−0.20)/0.04) · σ((0.85−X)/0.04)  Trommsdorff sigmoidal turn-on + vitrification cutoff
-inhib(I)     = σ((I_crit − I)/0.005)                         binary-with-smoothing inhibition (not (1−I) damping)
-dX/dt        = k · (1−X) · inhib(I) · g(X)
-dI/dt        = −c_inh · k − 1e−3·I · H(X − 1e−5)             MEHQ + O₂ cliff (triggers at X &gt; 10 ppm)
-δ(X)         = min(δ_max, f_plate · X · m / (ρ_PMMA · A_cool))  fouling layer thickness (CAPPED at 3 mm)
-U_eff(X)     = 1 / (1/U_clean + δ(X)/k_PMMA)
-Q_evap       = h_m · A_cool · (p_sat(T_film) − RH·p_sat(T_air)) · MW_H₂O · h_fg / (R·T_film)
-Q_crack(t)   = Cd · A_crack · √(2·ρ_vapor·ΔP) · ΔH_vap_MMA    for t ≥ 64 h (TIME-gated, not T-gated)
-Q_IR         = ε·σ·A_ext · (T_shell⁴ − T_sky⁴)               net radiative loss (sky ≈ 50°F at night)
-ops          = coverage_frac · duty_cycle                    operational realism: 0.30–0.60 typical
-withdraw     = H(T − 150°F)                                  OCFA withdrawal trigger collapses cooling to 10%
-Q_cool       = (U_eff · A · (T − T_water) + Q_evap + Q_crack) · ops · (1 − 0.9·withdraw) + Q_IR − Q_solar(t)
-dT/dt        = (Q_gen − Q_cool) / (m · C_p),  Q_gen = m · ΔH_p · dX/dt
+ΔT_strat(X) = ΔT_base · (1 + 1.5·X)   capped at 60°F          v5 DYNAMIC stratification
+T_rxn       = T_bulk + ΔT_strat(X) · 5/9 K                    reaction at the hot top layer
+
+k(T_rxn)    = A · exp(−Ea / R·T_rxn)                          Arrhenius rate
+g(X)        = 1 + 50 · σ((X−0.20)/0.04) · σ((0.85−X)/0.04)    Trommsdorff sigmoidal turn-on + vitrification
+
+INHIBITED CHANNEL (MEHQ-controlled):
+inhib(I)    = σ((I_crit − I)/0.005)                           binary-with-smoothing
+dX_inhib    = k · (1−X) · inhib(I) · g(X)
+
+v5 CHEMISTRY-BYPASS CHANNEL (escapes MEHQ via C-centered radicals):
+Ri_th       = A_th · exp(−Ea_th/RT_rxn) · [M]²                Mayo/Diels-Alder self-init   (A_th=1e8, Ea_th=115 kJ)
+Ri_perox    = 2·f_d·k_d·[ROOH],  k_d = A_d·exp(−Ea_d/RT_rxn)  Hydroperoxide homolysis      (A_d=1e14, Ea_d=120 kJ)
+Ri_poly     = 2·f_p·k_p·ρ_HH·X·[M₀]·gate(X)·φ_skin            PMMA scission (Synthron)     (A_p=1e12, Ea_p=130 kJ; X&gt;0.30)
+dX_chem     = C_th · √(Ri_th + Ri_perox + Ri_poly) · (1−X) · g(X) / [M₀]
+
+d[ROOH]/dt  = η_ox · Ri_th − k_d · [ROOH]                     ROOH state (η_ox = I/I₀, max 1)
+dI/dt       = −c_inh · k − 1e−3·I · H(X − 1e−5)               MEHQ + O₂ cliff
+
+dX_total    = dX_inhib + dX_chem
+
+FOULING + COOLING + WITHDRAWAL (unchanged from v4):
+δ(X)        = min(3 mm, f_plate · X · m / (ρ_PMMA · A_cool))  CAPPED to physically realistic
+U_eff(X)    = 1 / (1/U_clean + δ(X)/k_PMMA)
+Q_evap, Q_crack(t), Q_IR, Q_solar(t)                          as v4
+ops         = coverage_frac · duty_cycle
+withdraw    = H(T − 150°F)                                    OCFA withdrawal trigger
+Q_cool      = (U_eff · A · (T − T_water) + Q_evap + Q_crack) · ops · (1 − 0.9·withdraw) + Q_IR − Q_solar
+ΔH_p(X)     = 57700 · (1 − 0.07·X)                            v5: heat-of-poly decreases with X
+Cp(X)       = 1900 − 434·X                                    v5: tracks toward PMMA Cp
+
+dT/dt       = (Q_gen − Q_cool) / (m · Cp(X)),  Q_gen = m · ΔH_p(X) · dX_total
+
+State variables: {T, X, I, ROOH}  — v5 added ROOH (mol/L)
 
 Survival constraints (importance-sampled weights, not hard rejects):
-  HARD reject:  effective threshold (BLEVE − stratification) crossed before hr 75
+  HARD reject:  effective threshold (BLEVE − ΔT_strat(X_at_crossing)) crossed before hr 75
   SOFT weight:  Φ((peakF_by_hr_74 − 100 + σ_g) / σ_g)         censored-Gaussian gauge likelihood
     </code>
   </div>
 
-  <p><b>What's new in v4 vs prior versions:</b></p>
+  <p><b>What's new in v5 vs v4:</b></p>
   <ul>
-    <li><b>Importance sampling.</b> Hard "T ≥ 95 °F by hr 74" replaced with a soft censored-Gaussian likelihood. Acceptance jumped from 0.2% (v3) to 68% (v4).</li>
-    <li><b>I₀ prior collapsed.</b> Was bimodal (50% fresh / 50% aged); fresh trajectories couldn't reproduce the observed 77→90 °F rise so were deterministic waste. Now aged-only.</li>
-    <li><b>Operational realism.</b> Wetted-shell coverage ~0.5 × duty cycle ~0.9 multiplies the deluge cooling — portable monitors aren't a 100% film source.</li>
-    <li><b>Crack-vent time-gated.</b> Was T-gated near boiling; per McGovern the crack is venting NOW at 100 °F. Bernoulli-vapor flow magnitude ~5–25 kW.</li>
-    <li><b>Net IR radiative loss.</b> ~10 kW continuous nighttime cooling that prior versions missed.</li>
-    <li><b>Withdrawal trigger.</b> If bulk T &gt; 150 °F, OCFA pulls personnel; cooling collapses to ~10%. Captures real IC decision logic.</li>
-    <li><b>Hot-spot stratification.</b> Gauge reads bulk T but the reaction zone is the hotter top layer. Effective threshold = sampled BLEVE T − sampled ΔT_strat (median ~20 °F).</li>
-    <li><b>Trommsdorff onset moved to X=0.20</b> with sigmoidal turn-on + vitrification cutoff at X=0.85.</li>
-    <li><b>Fouling self-limiting at 3 mm.</b> Old monotonic formula gave 4 inches of PMMA at X=0.5 — physically absurd.</li>
+    <li><b>Mayo / Diels-Alder thermal self-initiation</b> — pure MMA self-initiates via a Diels-Alder dimer that abstracts H to make C-centered radicals. <i>Bypasses MEHQ.</i> Adds a non-zero background radical flux even when inhibitor is fully active. Magnitudes: 4.8e-9 /s at 305 K, 9e-8 /s at 339 K — small alone but seeds peroxide buildup.</li>
+    <li><b>Peroxide autocatalytic pathway</b> — new state variable [ROOH] in mol/L. Produced during induction (R• + O₂), decomposes thermally with t½ ~10h at 100 °C, minutes at 130 °C. <b>Each ROOH → 2 R• that also bypass MEHQ.</b> This is the autocatalytic clock behind Rohm-Haas 2010 and every reported MMA storage runaway.</li>
+    <li><b>PMMA backbone scission (Synthron mechanism)</b> — above ~120 °C the polymer skin's head-to-head linkages thermally cleave. Gated on X &gt; 0.30 with smooth turn-on. Evaluated at T_skin (top layer hotter than bulk). Late-stage runaway accelerator.</li>
+    <li><b>Dynamic stratification</b> — was a fixed per-trajectory sample; now <code>ΔT_strat(X) = ΔT_base · (1 + 1.5·X)</code>, capped at 60 °F. <b>Applied to BOTH the threshold check AND the Arrhenius T_rxn</b> — model is now internally consistent (threshold knows the hot spot; reaction happens at it).</li>
+    <li><b>Cp(X) and ΔH_p(X) tracking</b> — heat capacity shifts toward PMMA's 1466 J/(kg·K) with X; heat of polymerization drops ~7% across full conversion (Schultz &amp; Harborth).</li>
   </ul>
+
+  <p><b>What was new in v4:</b> importance sampling (Bayesian audit fix — biggest single jump in acceptance), I₀ prior collapsed to aged-only, operational realism (coverage × duty), time-gated crack vent, net IR cooling, withdrawal trigger, fouling self-limited at 3 mm, Trommsdorff onset moved to X=0.20.</p>
 
   <div class="callout warn">
     <b>Calibration honesty.</b> The model is a phenomenological lumped-parameter system, not a first-principles simulation. The pre-exponential <code>A</code> is calibrated to reproduce the observed ~1 °F/hr early rise. All other constants trace to published values (NIST, Polymer Handbook, MMA SDS) or to defensible audit-derived priors. Every prior is documented in the code comments.
@@ -190,13 +211,117 @@ Survival constraints (importance-sampled weights, not hard rejects):
   </div>
 
   <div class="callout warn">
-    <b>Where the model lands — and where OCFA disagrees.</b> The v4 posterior weights Hypothesis A heavily (~93%) but does NOT rule out B (~7% crossing mass, spread Tue–Thu+). Sunday evening, however, McGovern publicly hedged toward B: <i>"We are not there yet; we need to run this operation tonight."</i> The all-night mission is a real-world Bayesian update — its outcome (announced Monday-morning briefing) will move the posterior materially in one direction or the other. The state-surge composition is also revealing: 785+ personnel mobilized but only 3 hazmat teams and 24 scientists — heavy on law enforcement and shelter ops, light on chemistry mitigation tools. That signals the response posture is "contain and wait" rather than "actively neutralize."
+    <b>Where v5 lands — sharper disagreement with OCFA than v4.</b> v5 puts holds at 99.5% — stronger weight on Hypothesis A than v4's 93%. The added chemistry (Mayo + peroxide + polymer scission + dynamic stratification) <i>tightens</i> the conclusion in the deluge-wins direction because the new radical-source terms produce ROOH that stays bounded under cooling, and the polymer-skin scission is gated on X &gt; 0.30 which most trajectories never reach. Meanwhile McGovern's Sunday-evening walkback ("we are not there yet") explicitly hedged toward B. <b>This disagreement is itself important data.</b> Either (a) OCFA has information we don't (closer-look inspection of the crack, internal sensor readings, specific failure-mode observations) — likely, or (b) the model is too optimistic — possible, given the still-unmodeled Synthron-mode wall-skin runaway happens at T_skin we can't observe. The all-night-mission outcome (Monday-morning briefing) will move the posterior materially.
+  </div>
+</section>
+
+<!-- SOLUTIONS -->
+<section id="solutions">
+  <h2>5 — Possible mitigations (including out-of-the-box)</h2>
+  <p>A solutions-brainstorm agent (acting as a process-safety / hazmat-response consultant) generated a full menu of mitigation options. The model parameters each one would affect are explicit, so we can reason about which interventions would materially shift the posterior. Full analysis in <a href="https://github.com/KaraZajac/genie/garden-grove-mma-analysis/blob/main/sources/reference/solutions-2026-05-25.md" target="_blank" rel="noopener"><code>sources/reference/solutions-2026-05-25.md</code></a>.</p>
+
+  <h3>Top 5 prioritized actions</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Mechanism</th><th>Model lever</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td>
+          <td><b>Chilled-water tanker swap</b></td>
+          <td>33–40 °F glycol-water from breweries/dairies replaces 70 °F hydrant water. Larger ΔT → 50–70% more cooling per gallon. Same delivery system.</td>
+          <td><code>T_water</code> ↓, indirect <code>UA·ΔT</code> ↑</td>
+          <td><span class="tag ok">PROMISING</span></td></tr>
+      <tr><td class="num">2</td>
+          <td><b>Submersible cooling coil via non-gummed port</b></td>
+          <td>Lower a chilled-glycol coil through any accessible nozzle/instrument boss/manway. The polymer plug blocks the MAIN valve; auxiliary ports may not be plugged. Only intervention that directly attacks bulk <code>T_b</code>.</td>
+          <td><code>UA</code> ↑↑ (interior, not shell)</td>
+          <td><span class="tag ok">PROMISING</span></td></tr>
+      <tr><td class="num">3</td>
+          <td><b>Robotic remote relief drilling (EOD platform + Be-Cu bit + N₂/fog curtain)</b></td>
+          <td>LAPD/OCSD/FBI bomb-squad robots drill a controlled vent. Operationalizes Covey's "preferred outcome" (spill) rather than waiting for the tank to choose.</td>
+          <td><code>P_h</code> ↓, converts BLEVE tail → controlled-spill branch</td>
+          <td><span class="tag ok">PROMISING</span></td></tr>
+      <tr><td class="num">4</td>
+          <td><b>Phenothiazine inhibitor cocktail drone-delivered through the crack</b></td>
+          <td>Phenothiazine (NOT MEHQ — bulk is O₂-depleted, MEHQ won't work). Drone with positive-displacement micro-pump payload drops liquid through existing crack.</td>
+          <td><code>C_inh</code> at surface ↑, marginal bulk effect</td>
+          <td><span class="tag warn">WORTH TRYING</span></td></tr>
+      <tr><td class="num">5</td>
+          <td><b>Expand evacuation to 1.5 mi + pre-stage MCI/burn/decon</b></td>
+          <td>Pure consequence reduction for the 0.5% BLEVE tail. Half-mile debris worst case (Picazo) + 15% refusal rate.</td>
+          <td>doesn't affect <code>P(fail)</code>; reduces <code>E[harm]</code></td>
+          <td><span class="tag warn">WORTH TRYING</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Also promising (worth trying)</h4>
+      <ul>
+        <li><b>CO₂ snow curtain</b> on the shell — 2-4× local UA + suppresses ignition window. Manage thermal-shock gradient.</li>
+        <li><b>Ice slurry / pumpable ice</b> — 2-3× cooling capacity of chilled water alone.</li>
+        <li><b>Vapor extraction via vacuum pump</b> on the crack — directly attacks <code>P_h</code>.</li>
+        <li><b>Berm augmentation</b> for spill containment — pure downside protection.</li>
+        <li><b>Federal asset deployment</b> — National Guard 9th Civil Support Team (chem/bio), EPA Region 9 ERT, DOE NEST robotics.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>DO NOT ATTEMPT</h4>
+      <ul>
+        <li><b>N₂ headspace blanketing</b> — strips dissolved O₂, DEFEATS MEHQ. Exactly the Synthron/Rohm-Haas failure mode.</li>
+        <li><b>O₂ / dry-air sparging through crack</b> — pushes headspace into the 1.7-8.2% flammable range. Static-discharge ignition risk.</li>
+        <li><b>Liquid N₂ on shell</b> — thermal-shock brittle fracture on stressed carbon-steel with existing crack. Textbook BLEVE trigger.</li>
+        <li><b>Foam injection on crack</b> — seals the passive vent. Raises <code>P_h</code>. Counterproductive.</li>
+        <li><b>Thermal lance</b> — 4,000 °F = guaranteed MMA vapor ignition.</li>
+        <li><b>Deliberate BLEVE</b> — doesn't reduce blast radius; political/legal consequences extreme.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Key chemistry insight from the brainstorm:</b> The "stuck valve" almost certainly isn't a mechanical failure — it's a <b>polymer plug</b> (MMA self-polymerizing in the outlet jammed it). This implies any other tank penetration is at risk of the same failure mode. <b>Phenothiazine</b>, not MEHQ, is the right inhibitor for the bulk because the bulk is O₂-depleted. <b>Bulk-T interventions dominate shell-T interventions</b> because carbon steel + slow internal convection means shell-cooling barely couples to bulk-T.
+  </div>
+</section>
+
+<!-- CALIBRATION -->
+<section id="calibration">
+  <h2>6 — Historical-analog calibration</h2>
+  <p>Two MMA-storage incidents in the public record give the model real targets to validate against. <a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/rohm-haas-2010-detailed.md" target="_blank" rel="noopener">Full detail</a>.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Rohm &amp; Haas 2010 (Louisville, KY)</h4>
+      <ul style="font-size:13px">
+        <li><b>175,000 lb / 17,500 lb released = exactly 10%</b></li>
+        <li>Vent duration: <b>13.5 hours</b> (12:30 PM → 2:00 AM)</li>
+        <li>Avg release rate: 0.16 kg/s through PSV</li>
+        <li>DOT-105J car: <b>did NOT rupture</b>, no BLEVE, no fire</li>
+        <li>Vapor-only release; perimeter VOC monitoring went non-detect within 6 hours</li>
+        <li>By analogy with 2008 sister incident at same facility: ~90% of mass likely polymerized to solid PMMA in-situ ("hardened up like plexiglass after about 8 days")</li>
+      </ul>
+      <p style="font-size:13px"><b>Calibration target:</b> when v5 is run with Rohm-Haas-like parameters (175,000 lb, PSV ~75 psig, ambient ~30 °C), it should reproduce a bounded-pressure plateau that vents ~10% over ~13 hours with no rupture. <b>v5 calibration run pending</b>.</p>
+    </div>
+    <div class="card">
+      <h4>Synthron 2006 (Morganton, NC)</h4>
+      <div class="callout warn" style="margin:8px 0">
+        <b>Important correction:</b> Synthron was <b>n-butyl acrylate</b> + benzoyl-peroxide initiator, NOT MMA. Use only as qualitative failure-mode analog.
+      </div>
+      <ul style="font-size:13px">
+        <li>1,500 gal vertical reactor, 75 psig MAWP</li>
+        <li>Leaked at <b>23 psig</b> (vs 75 psig MAWP) because only 4 of 18 manway clamps were installed — <b>mechanical containment failure</b>, not chemistry burst</li>
+        <li>Failure mode: secondary CVCE in the BUILDING from vented vapor, not vessel rupture</li>
+        <li>Onset-to-leak: "several minutes" between BPO injection and vent (the "80 → 145 °C in 10 min" line from older audits is NOT in the CSB report)</li>
+        <li><b>Key lesson:</b> Vent DISCHARGE LOCATION is a first-order safety variable. Rohm-Haas vented to atmosphere = safe; Synthron vented into a building = casualties.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <b>What Rohm-Haas calibration would change:</b> if the v5 model can't reproduce the 10%/13.5h outcome with Rohm-Haas parameters, the kinetics constants need adjustment. Currently the model is calibrated phenomenologically against the Garden Grove observations only. Adding the Louisville test would be a true cross-validation. <b>Deferred to v6.</b>
   </div>
 </section>
 
 <!-- CONSEQUENCE -->
 <section id="consequence">
-  <h2>5 — Consequence / Blast-Radius Model</h2>
+  <h2>7 — Consequence / Blast-Radius Model</h2>
   <p>If the tank fails (~7% probability per current posterior), what does the footprint look like? Three failure branches with screening-grade physics: TNT-equivalent overpressure (Brode), point-source thermal radiation, and Pasquill-Gifford Gaussian dispersion with mild heavy-gas correction. Interactive — drag the marker if you want to refine the facility location. The OCFA evacuation polygon (Ball / Trask / Valley View / Dale) overlays for reference.</p>
 
   <div class="sim">
@@ -272,7 +397,7 @@ Survival constraints (importance-sampled weights, not hard rejects):
 
 <!-- AUDITS -->
 <section id="audits">
-  <h2>6 — Audit trail</h2>
+  <h2>8 — Audit trail</h2>
   <p>Six independent agent audits have shaped the current model. Each report is preserved in the source corpus.</p>
 
   <div class="grid-2">
@@ -290,10 +415,39 @@ Survival constraints (importance-sampled weights, not hard rejects):
         <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/physics-audit-2-2026-05-25.md" target="_blank" rel="noopener"><code>physics-audit-2-2026-05-25.md</code></a> — DIERS-perspective ODE review.</li>
         <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/tank-audit-2026-05-25.md" target="_blank" rel="noopener"><code>tank-audit-2026-05-25.md</code></a> — process-safety engineer review. Found that the PSV is broken (bulged, stuck).</li>
         <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/numbers-audit-2026-05-25.md" target="_blank" rel="noopener"><code>numbers-audit-2026-05-25.md</code></a> — constant-by-constant calibration check.</li>
-        <li><b>Bayesian/inference audit</b> — found that hard constraints + bimodal I₀ were driving 99.5% sample waste. Fixing the inference machinery pushed acceptance 0.2% → 68%. (Findings folded directly into v4 — no separate doc.)</li>
-        <li><b>Polymer kinetics deep dive</b> — found missing thermal Diels-Alder initiation, peroxide pathway, polymer auto-catalysis at the wall skin (Synthron mechanism). Deferred to v5.</li>
-        <li><b>Fire-service / IC operations</b> — found wetted-coverage 30–55% (not 100%), crew duty cycle ~88%, net IR cooling at night, withdrawal trigger at 150 °F. Folded into v4 as operational-realism multipliers.</li>
+        <li><b>Bayesian/inference audit</b> — found that hard constraints + bimodal I₀ were driving 99.5% sample waste. Fixing the inference machinery pushed acceptance 0.2% → 68%. Critical for the v4 jump.</li>
+        <li><b>Polymer kinetics deep dive</b> — found missing thermal Diels-Alder initiation, peroxide pathway, polymer auto-catalysis at the wall skin (Synthron mechanism). <b>Implemented in v5.</b></li>
+        <li><b>Fire-service / IC operations</b> — found wetted-coverage 30–55% (not 100%), crew duty cycle ~88%, net IR cooling at night, withdrawal trigger at 150 °F. Folded into v4.</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px">
+    <div class="card">
+      <h4>Round 3 — five-agent v5 build (2026-05-25 overnight)</h4>
+      <ul>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/solutions-2026-05-25.md" target="_blank" rel="noopener"><code>solutions-2026-05-25.md</code></a> — mitigation brainstorm (top 5 ranked, including drone-injection and chilled-water tankers).</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/rohm-haas-2010-detailed.md" target="_blank" rel="noopener"><code>rohm-haas-2010-detailed.md</code></a> — calibration target: 10% release / 13.5 h / no rupture.</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/synthron-2006-detailed.md" target="_blank" rel="noopener"><code>synthron-2006-detailed.md</code></a> — CRITICAL: Synthron was n-butyl acrylate + BPO, NOT MMA. Reframes prior audit assumptions.</li>
+        <li><a href="https://github.com/KaraZajac/garden-grove-mma-analysis/blob/main/sources/reference/fact-ledger-2026-05-25.md" target="_blank" rel="noopener"><code>fact-ledger-2026-05-25.md</code></a> — 280 discrete facts from all sources, with 14 inconsistencies surfaced. <b>Biggest find: the "77 °F Fri morning" reading was exterior drone IR, NOT interior gauge.</b> The "+13 °F overnight" rise was a measurement-category change, not a real heating delta.</li>
+        <li><b>Polymer kinetics implementation spec</b> — implementation-ready equations + constants for Mayo/Diels-Alder, peroxide, and PMMA scission. Directly used to build v5.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Posterior evolution across all 9 audits</h4>
+      <table style="font-size:12px">
+        <thead><tr><th>Version</th><th>Holds</th><th>Acceptance</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>v1 synth</td><td>67%</td><td>—</td><td>Pre-MC synthesis</td></tr>
+          <tr><td>v1 ABC</td><td>78%</td><td>36%</td><td>Naive rejection ABC</td></tr>
+          <tr><td>v2 (+fouling)</td><td>69%</td><td>30%</td><td>+PMMA wall fouling</td></tr>
+          <tr><td>v2 (+audit)</td><td>66%</td><td>24%</td><td>+solar/O₂ fixes</td></tr>
+          <tr><td>v2 (+evap)</td><td>94%</td><td>43%</td><td>+evaporative cooling</td></tr>
+          <tr><td>v3 (paradigm)</td><td>4.5%</td><td>0.2%</td><td>+gauge constraint + threshold revision — DEGENERATE</td></tr>
+          <tr><td>v4 (inference fix)</td><td>93%</td><td>68%</td><td>Soft likelihoods + collapsed I₀ — meaningful posterior</td></tr>
+          <tr><td><b>v5 (full chem)</b></td><td><b>99.5%</b></td><td><b>25%</b></td><td>+Mayo/Diels-Alder + peroxide + polymer scission + dyn. stratification</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -302,7 +456,7 @@ Survival constraints (importance-sampled weights, not hard rejects):
 
 <!-- SOURCES -->
 <section id="sources">
-  <h2>7 — Sources</h2>
+  <h2>9 — Sources</h2>
   <p>Every fact in this brief is backed by a markdown snapshot in <code>/sources/</code>, captured 2026-05-24 to 25. Three parallel research agents gathered the initial corpus (news, chemistry references, weather/environment); six audit agents wrote evaluation docs.</p>
 
   <div class="grid-2">
@@ -337,7 +491,7 @@ Survival constraints (importance-sampled weights, not hard rejects):
 
 <!-- REPRODUCE -->
 <section id="reproduce">
-  <h2>8 — Reproduce / extend</h2>
+  <h2>10 — Reproduce / extend</h2>
   <div class="grid-2">
     <div class="card">
       <h4>Local quick start</h4>
@@ -374,9 +528,13 @@ bash scripts/refresh.sh 10000 1500
 
 <!-- CAVEATS -->
 <section id="caveats">
-  <h2>9 — Caveats &amp; limitations</h2>
+  <h2>11 — Caveats &amp; limitations</h2>
   <ul>
-    <li><b>The whole exercise rests on open-source reporting.</b> No interior temperature reading has been publicly released since Friday 9:40 PM PDT (90 °F gauge). Everything since is inferred from the rate-of-rise observation and the Sun 5:50 PM "≥100 °F gauge-pegged" anchor.</li>
+    <li><b>The whole exercise rests on open-source reporting.</b> No interior temperature reading has been publicly released since Friday 9:40 PM PDT (90 °F gauge). Everything since is inferred from one rate-of-rise observation and the Sun 5:50 PM "≥100 °F gauge-pegged" anchor.</li>
+    <li><b>CRITICAL fact-ledger finding (May 25):</b> the "77 °F Friday morning" reading was <b>exterior drone IR</b>, not interior gauge. The "+13 °F overnight" rise (77→90) was a <b>measurement-category change</b>, not a real heating delta. This means we have ONE real interior anchor (90 °F at hr 30), not two — and the "1 °F/hr" rate-of-rise that's been cited everywhere is computed from an exterior-vs-interior interpolation, not a real heating rate. The model still uses 1 °F/hr as a soft calibration target but this is now flagged as suspect.</li>
+    <li><b>v5 added three chemistry mechanisms (Mayo, peroxide, polymer scission)</b> with constants from Polymer Handbook + Lin-Hsieh + Denisov. These are at the right order of magnitude but not measured for this specific aged-batch chemistry.</li>
+    <li><b>Synthron 2006 is NOT an MMA analog</b> — it was n-butyl acrylate + benzoyl peroxide, with mechanical-containment failure (4 of 18 manway clamps) as the proximate cause. Prior audits conflated it with MMA chemistry. Reframed in the calibration section.</li>
+    <li><b>v5 holds at 99.5% but acceptance dropped to 25%</b> — dynamic stratification rejects more trajectories that creep into the lower effective threshold. ESS efficiency 93% (excellent quality among accepted), but the 75% hard-rejection rate is large and itself informative: most prior-space combinations of parameters are inconsistent with the survival history.</li>
     <li><b>Threshold prior is centered on Picazo's BLEVE physics (~213 °F)</b> with N(210, 25). The earlier "approximately 100 °F out of control" responder quote is reinterpreted as a caution threshold, not catastrophic.</li>
     <li><b>Stratification offset</b> is sampled N(20, 12) °F because the gauge probably reads bulk T but the reaction zone is the hotter top liquid layer. Effective threshold = sampled BLEVE − sampled stratification.</li>
     <li><b>Crack-vent magnitude</b> is approximate. No measurement of crack flow rate or geometry exists; the model uses Bernoulli flow on a sampled ~1 cm² area, giving ~5–25 kW depending on T.</li>
@@ -396,8 +554,9 @@ bash scripts/refresh.sh 10000 1500
 
 <footer>
   Open-source analytical exercise. No PII, no inside information, no operational role.
-  Method: lumped-parameter ODE thermal model — Arrhenius kinetics, Trommsdorff sigmoidal gel amplifier, binary inhibition with O₂-cliff, PMMA wall-fouling with 3 mm spalling cap, deluge evaporative cooling, time-gated crack-vent (Bernoulli vapor flow), net IR radiative loss, withdrawal-trigger collapse, clock-aligned diurnal solar.
-  Posterior via importance-sampled ABC conditioned on three observations (no BLEVE crossing, Thursday auto-vent setpoint calibration, gauge-pegged ≥100 °F at hour 74 with censored-Gaussian likelihood).
+  <b>Model v5</b>: lumped-parameter ODE thermal model — Arrhenius kinetics + Trommsdorff sigmoidal gel + binary inhibition + O₂-cliff + Mayo/Diels-Alder thermal self-init + peroxide autocatalysis (ROOH state) + PMMA wall-skin scission + PMMA fouling (capped 3 mm) + deluge evaporative cooling + time-gated crack-vent + net IR radiative loss + dynamic stratification (X-dependent) + Cp(X) + ΔH_p(X) + withdrawal-trigger collapse + clock-aligned diurnal solar.
+  Posterior via importance-sampled ABC conditioned on three observations (no BLEVE crossing before hour 75, Thursday auto-vent setpoint calibration, gauge-pegged ≥100 °F at hour 74 with censored-Gaussian likelihood).
+  Calibrated through nine independent agent audits (three rounds: physics/content/gap; physics-2/tank/numbers + Bayesian/kinetics/ops; Rohm-Haas/Synthron/solutions/fact-ledger/kinetics-impl).
   Source: <a href="https://github.com/KaraZajac/garden-grove-mma-analysis" target="_blank" rel="noopener">github.com/KaraZajac/garden-grove-mma-analysis</a>.
 </footer>
 
