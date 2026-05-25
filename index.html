@@ -149,7 +149,16 @@ Survival constraints (importance-sampled weights, not hard rejects):
     <b>How to read this.</b> "Holds" doesn't mean "the tank is safe" — it means no threshold crossing through Thursday in the model. The "preferred outcome" per OCFA is a controlled spill, which the model treats as a hold (it's not a BLEVE). The ~7% crossing mass is genuinely about thermal runaway and tank rupture.
   </div>
 
-  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code></p>
+  <h3>Sensitivity — which parameter drives the answer?</h3>
+  <p>For each uncertain parameter, the others are held at the prior and this one is pinned to its low/high tail. Δ in weighted crosses-pct shows how much each input moves the answer.</p>
+
+  <div class="chart-wrap">
+    <h4>Parameter sensitivity (tornado)</h4>
+    <p class="cap">Longer bar = more sensitive. The v4 model has a flat, well-distributed sensitivity profile — no single dominant parameter. The top three (I₀, T₀, A_cool) reflect that initial conditions and tank geometry now matter more than any single cooling lever, which is itself a sign the model is well-calibrated.</p>
+    <canvas id="chart-sens"></canvas>
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);font-family:var(--mono)">Generated: <span id="mc-asof">—</span> · reproduce with <code>node scripts/montecarlo.js 10000</code> and <code>node scripts/sensitivity.js 1000</code></p>
 </section>
 
 <!-- HYPOTHESES -->
